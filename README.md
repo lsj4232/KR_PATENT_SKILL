@@ -1,0 +1,1 @@
+# KR_PATENT_SKILL
