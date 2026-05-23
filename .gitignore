@@ -1,0 +1,44 @@
+# Backup files (auto-created by append_learning.py)
+*.bak.*
+
+# Node modules (docx package can be installed globally or locally)
+node_modules/
+
+# Build outputs (sample docx)
+*.docx
+!templates/*.docx
+
+# Test workspace
+/tmp/builder-test/
+*-workspace/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# Patent work artifacts (개인 작업 파일이 실수로 커밋되는 것을 방지)
+# 한국 특허 명세서 작업 시 개인 정보가 든 content.js, 출력 docx 등이
+# 레포지토리에 섞이지 않도록 보호
+content.js
+content_part*.js
+build.js
+patent/
+*.tar.gz
+
+# Outputs directory (Anthropic 환경의 산출물 경로)
+/mnt/user-data/outputs/
