@@ -70,11 +70,15 @@ module.exports = {
     "<도 1 실시예 단락>",
     "<도 2 실시예 단락>"
   ],
-  symbols: [
-    { num: "10", name: "슬릿 스캐너" },
-    { num: "100", name: "빔 진단 시스템" },
-    { num: "110", name: "스플리터" }
-  ],
+  // symbols: [ ... ]   // ⚠ default: 생략. 한국 변리사 실무상 【부호의 설명】
+                          // 섹션은 의도적으로 두지 않는 게 권리범위 보호·검토 부담
+                          // 양면에서 유리. symbols 키 자체를 누락 또는 [] 빈 배열로 두면
+                          // 빌더가 해당 섹션을 건너뜀. 사용자가 명시적으로 두기로
+                          // 결정한 경우에만 다음 형태로 채움:
+                          //   symbols: [
+                          //     { num: "10", name: "슬릿 스캐너" },
+                          //     { num: "100", name: "빔 진단 시스템" },
+                          //   ],
   claims: [
     "[청구항 1] ~를 포함하는 X 시스템.",
     "[청구항 2] 제1항에 있어서, ~인 것을 특징으로 하는 X 시스템."
@@ -179,6 +183,11 @@ _법인명__관리번호_명세서초안08_담당자__YYYYMMDD_발명명.docx
 
 ### 누적 양식 개선
 - (예시) 청구항 단락 간 후방 간격을 추가로 0.5줄 띄우는 것이 검토자에게 가독성 좋다는 피드백 → 스크립트에 반영
+- (2026-05-28) 외부에서 받은 도면 또는 docx 인계 시점에 docx 안 word/media/ 추출 + 외부 도면 폴더와 sha256 비교 → 도면 버전 차이 즉시 검출. 빌더 또는 정합성 점검 인프라성 스크립트로 추가. 옛 도면 폴더 기준으로 정합성 진단 시 잘못된 결함 보고 발생 사례 있음.
+- (2026-05-28) OneDrive 한글 경로(OneDrive\문서\...) 안 docx 작업 시 파일 잠금·인코딩 충돌이 잦음 → C:\Users\<user>\_v<N>.docx 식 ASCII 경로 작업 사본 생성 → 작업 → OneDrive 복귀 패턴이 default. python-docx 스크립트 첫 줄에 os.environ['PYTHONIOENCODING']='utf-8'; sys.stdout.reconfigure(encoding='utf-8') 보일러플레이트 자동 삽입. 사례: v9/v10/v11 라운드 모두 동일 패턴 적용.
+- (2026-05-28) 사용자 IPLAB 빌드 default 확정: 폰트 '맑은 고딕', 본문 12pt (size half-points 24), 줄간격 2.0 (spacing.line 480), 섹션 헤더 outline level 자동 부여 (Level 1: 【발명의 설명】·【청구범위】·【요약서】·【대표도】 / Level 2: 【발명의 명칭】·【기술분야】·【발명의 배경이 되는 기술】·【발명의 내용】·【도면의 간단한 설명】·【발명을 실시하기 위한 구체적인 내용】·【부호의 설명】·【요약】 / Level 3: 【해결하고자 하는 과제】·【과제의 해결 수단】·【발명의 효과】). buildDocument 첫 줄에 【발명의 설명】 컨테이너 헤더 출력 강제. sectionTitle(text, {level: N})·buildSection(title, paras, {level: N}) 시그니처로 호출.
+- (2026-05-28 교정) outline level 정본 구조는 사용자 P-2026-011-01-KR v11 정본 기준으로 재정렬. **Level 1 (4개 컨테이너)**: 【발명의 설명】·【청구범위】·【요약서】·【도면】. **Level 2**: 【발명의 명칭】·【기술분야】·【발명의 배경이 되는 기술】·【발명의 내용】·【도면의 간단한 설명】·【발명을 실시하기 위한 구체적인 내용】·【청구항 N】(각 청구항마다)·【요약】·【대표도】·【도면 N】(각 도면마다). **Level 3**: 【해결하고자 하는 과제】·【과제의 해결 수단】·【발명의 효과】·【본 발명 시작】·실시예 본문 1단 소제목 ('1. 시스템 구성', '2. 디지털 트윈 모델 생성' 등). **Level 4**: 실시예 본문 2단 소제목 ('2-1.', '2-2.', '6-1.' 등). buildClaims는 청구항마다 【청구항 N】 헤더 자동 출력, buildDrawingsSection으로 【도면】 컨테이너 + 【도면 N】 페이지 출력, buildDetailedDescription으로 실시예 본문 sub-heading 객체({heading, level, paragraphs}) 지원. 【대표도】는 L1 아닌 L2.
+- (2026-05-28) python-docx의 insert_paragraph_before(ref_para, txt) 다중 신설 시 순서 동작 — ref_para가 고정된 채 정순으로 [a, b, c, d] 삽입 시 결과는 [..., a, b, c, d, ref_para] 순서로 누적 (각 삽입이 ref_para 바로 앞에 추가되므로 직전 삽입분은 한 칸 앞으로 밀림). reversed(list) 호출 시 결과는 역순으로 출력됨. 신설 단락 순서가 의도와 일치하는지 항상 검증 단계 필요 — d.paragraphs 재로딩 후 인덱스 출력으로 verify. 보일러플레이트: for txt in new_paras: ref_para.insert_paragraph_before(txt) — 정순 사용이 default. 사례: v12 첫 시도에서 reversed로 삽입하여 결과 순서가 역순으로 나옴(정의 단락이 변형 단락 뒤에 위치) → 정순으로 재실행.
 
 ## 자주 발생하는 빌드 오류
 
