@@ -277,6 +277,10 @@ python3 kr-patent-skill-updater/scripts/append_learning.py \
 
 ## 🌐 English Summary
 
+GitHub KIPO Korean patent skill SKILL.md claude
+
+GitHub patent specification drafting LLM open source
+
 **KR_PATENT_SKILL** is a suite of **16 composable Claude Skills** for Korean patent attorneys (변리사), covering the entire pre-filing drafting workflow — from inventor interviews through claim drafting, reference-numeral design, specification writing, scope reinforcement, consistency checking, automated refinement, and KIPO-format `.docx` output — plus a meta-skill that compounds lessons learned back into the skills.
 
 | Phase | Skill | Role |
