@@ -1,4 +1,4 @@
-# KR_PATENT_SKILL
+9# KR_PATENT_SKILL
 
 한국 변리사 실무를 위한 Claude 스킬(Skills) 모음. 발명자 미팅, 독립항 작성, 부호 체계 설계, 도면 부호 매핑, 명세서 본문 작성, 권리범위 보강(용어 정의·변형 실시예), 정합성 점검, 자동 정제 루프, docx 출력·후처리, 회고를 통한 스킬 자동 업데이트, **전체 워크플로우 자동 오케스트레이션**까지 — 한국 특허 명세서 작성 전 과정을 **16개 스킬**로 커버한다.
 
@@ -276,6 +276,10 @@ python3 kr-patent-skill-updater/scripts/append_learning.py \
 ---
 
 ## 🌐 English Summary
+
+Korean patent specification writing skill
+
+Claude skill KIPRIS 특허로
 
 GitHub KIPO Korean patent skill SKILL.md claude
 
