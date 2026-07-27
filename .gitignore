@@ -42,3 +42,12 @@ patent/
 
 # Outputs directory (Anthropic 환경의 산출물 경로)
 /mnt/user-data/outputs/
+
+# Backup files (bak2 variant)
+*.bak2.*
+
+# 고객 사건 데이터가 포함된 서식·산출물 (공개 레포 제외)
+*.hwpx
+*.hwp
+*.pptx
+*.pdf
