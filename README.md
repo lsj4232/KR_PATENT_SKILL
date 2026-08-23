@@ -6,6 +6,16 @@
 
 > _English summary at the [bottom of this README](#-english-summary)._
 
+<p align="center">
+  <img src="./docs/examples/example-agent-system.png" width="820" alt="특허 블록도 에디터로 작도한 대화형 에이전트 시스템 구성도">
+</p>
+<p align="center">
+  <sub><b>이런 도면을 만든다.</b> 자연어 설명 한 단락을 <code>.pbd</code> 로 작성해 에디터에 주입하고 렌더한 결과 —
+  사용자 아이콘, 화면 컨테이너(300), 시스템 컨테이너(100), 중첩 패널, 물결 지시선 부호 태그,
+  점선 외부망 경계(200), 구름(210)과 원기둥 DB(220)까지 출원용 흑백 선화 그대로 나온다.
+  마우스 작업 0회, 3배 해상도 PNG.</sub>
+</p>
+
 ## ✨ 특징
 
 - **조합 가능(Composable)** — 작고 집중된 23개 스킬. 전체 워크플로우 또는 일부만 선택적으로 사용.
@@ -63,6 +73,8 @@
 - 채움: 흰칠 → 45° 빗금(`hatch: true`) → 점무늬(`hatch: "dot"`) 순환
 - 이미지 삽입·투명색 지정, 스마트 가이드(정렬·등간격), 도면부호 물결 지시선 태그
 - 수식(MathJax, `math: true`), 3배 고해상도 PNG 내보내기, `.pbd` 파일 연결
+
+위 예시 도면([원본](./docs/examples/example-agent-system.png))이 이 앱과 스킬로 만든 산출물이다.
 
 ```bash
 cd patent-block-diagram-app
