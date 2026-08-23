@@ -1,6 +1,6 @@
 {
-  "template": "C:/Users/IPLAB/.claude/skills/kr-patent-prior-art-report/assets/template_우선심사신청설명서.hwpx",
-  "output": "C:/Users/IPLAB/AppData/Local/Temp/claude/C--WINDOWS-System32-WindowsPowerShell-v1-0/afcb0a48-d498-4861-8d4b-a4b0aacb628a/scratchpad/test_out.hwpx",
+  "template": "<홈>/.claude/skills/kr-patent-prior-art-report/assets/template_우선심사신청설명서.hwpx",
+  "output": "<홈>/AppData/Local/Temp/claude/C--WINDOWS-System32-WindowsPowerShell-v1-0/afcb0a48-d498-4861-8d4b-a4b0aacb628a/scratchpad/test_out.hwpx",
   "drop_example": true,
   "table_font_height": 900,
   "search_keywords": "모듈러 건축, 접합부(체결 단위), 볼트 풀림(체결력), 딥러닝(학습 모델), 3D 스캔(BIM 정합)",

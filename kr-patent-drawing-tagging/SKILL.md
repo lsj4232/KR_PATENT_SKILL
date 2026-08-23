@@ -34,7 +34,7 @@ description: >
 
 ### Step 2. 설정 JSON 작성
 
-`examples/사건 C_config.json` 을 복사하여 사건별로 작성. 도면마다:
+`examples/example_config.json` 을 복사하여 사건별로 작성. 도면마다:
 
 | 필드 | 의미 |
 |---|---|

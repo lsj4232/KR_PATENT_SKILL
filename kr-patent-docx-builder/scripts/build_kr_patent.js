@@ -31,7 +31,7 @@ try {
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, LevelFormat, HeadingLevel, BorderStyle, WidthType,
-  ShadingType, PageBreak, PageNumber, Header, Footer
+  ShadingType, PageBreak, PageNumber, Header, Footer, Tab, TabStopType
 } = docxLib;
 
 // =============================================================================
@@ -50,7 +50,8 @@ const SIZE = {
 const INDENT = {
   body_first_line: 280,    // 본문 첫줄 들여쓰기 (DXA, 약 2글자)
   claim_first_line: 677,   // 청구항 첫줄 (firstLine 677 DXA = firstLineChars 300)
-  claim_hanging: 280       // 청구항 매달림 들여쓰기
+  claim_hanging: 280,      // 청구항 매달림 들여쓰기
+  claim_tab_pos: 1021      // 청구항 탭 정지 위치 (사무소 서식, claim_tab=true일 때)
 };
 
 const SPACING = {
@@ -59,6 +60,29 @@ const SPACING = {
   para_after: 120,
   line: 480           // 2.0배 줄간격 (240=1.0, 360=1.5, 480=2.0)
 };
+
+// 본문 정렬 · 용지 여백 — content.layout 으로 덮어쓸 수 있다
+const LAYOUT = {
+  body_align: "JUSTIFIED",
+  l1_center: false,        // 【발명의 설명】·【청구범위】·【요약서】·【도면】 가운데 정렬
+  title_indent: false,     // 발명의 명칭 단락 첫줄 들여쓰기
+  drawings_indent: false,  // 【도면의 간단한 설명】 각 줄 첫줄 들여쓰기                                  // "JUSTIFIED" | "LEFT"
+  claim_tab: true,         // 청구항 들여쓰기를 firstLine 대신 실제 탭 문자로 (사무소 서식 ★)
+  claim_linebreak: true,   // 청구항 본문을 구성요소 경계마다 문단 분할 (2026-08-11 확정)
+  margin: { top: 1440, right: 1080, bottom: 1440, left: 1080 }  // DXA
+};
+
+// content.layout = { indent:{...}, spacing:{...}, body_align:"LEFT", margin:{...} }
+function applyLayout(layout) {
+  if (!layout) return;
+  Object.assign(INDENT, layout.indent || {});
+  Object.assign(SPACING, layout.spacing || {});
+  if (layout.body_align) LAYOUT.body_align = layout.body_align;
+  ["l1_center", "title_indent", "drawings_indent", "claim_tab", "claim_linebreak"].forEach(k => {
+    if (layout[k] !== undefined) LAYOUT[k] = layout[k];
+  });
+  Object.assign(LAYOUT.margin, layout.margin || {});
+}
 
 // =============================================================================
 // Run / Paragraph 헬퍼
@@ -86,7 +110,7 @@ function runK(text, opts = {}) {
 function sectionTitle(text, opts = {}) {
   const level = typeof opts.level === "number" ? opts.level : 2;
   return new Paragraph({
-    alignment: AlignmentType.LEFT,
+    alignment: (LAYOUT.l1_center && level === 1) ? AlignmentType.CENTER : AlignmentType.LEFT,
     spacing: {
       before: SPACING.section_before,
       after: SPACING.section_after,
@@ -100,7 +124,7 @@ function sectionTitle(text, opts = {}) {
 // 본문 단락
 function bodyPara(text, opts = {}) {
   return new Paragraph({
-    alignment: AlignmentType.JUSTIFIED,
+    alignment: AlignmentType[LAYOUT.body_align],
     spacing: {
       before: 0,
       after: opts.afterSpacing || SPACING.para_after,
@@ -111,8 +135,49 @@ function bodyPara(text, opts = {}) {
   });
 }
 
-// 청구항 단락
+// 문단 첫머리에 실제 <w:tab/> 를 넣는 단락 (w:ind 미부여 — 탭이 들여쓰기를 담당)
+// 사무소 서식: 【발명의 명칭】 본문 + 【청구항 N】 각 문단
+function tabPara(text) {
+  return new Paragraph({
+    alignment: AlignmentType[LAYOUT.body_align],
+    spacing: { before: 0, after: SPACING.para_after, line: SPACING.line },
+    tabStops: [{ type: TabStopType.LEFT, position: INDENT.claim_tab_pos }],
+    children: [
+      new TextRun({
+        children: [new Tab(), text],
+        font: { name: FONT, eastAsia: FONT, hAnsi: FONT, hAnt: FONT },
+        size: SIZE.body
+      })
+    ]
+  });
+}
+
+// 청구항 본문 → 문단(줄) 배열
+// 분할 규칙 (2026-08-11 사용자 확정, 사무소 서식):
+//   (1) 종속항 전제부 "제N항에 있어서," 를 1행으로 분리
+//   (2) 방법항 구성요소 경계 "단계;" / "단계; 및" 뒤에서 분할
+//   (3) 시스템·장치항 물리 블록 경계 "~부; 및" 뒤에서 분할
+//   (4) 시스템·장치·프로그램항의 제어부 동작 "~하고," / "~하며," 뒤에서 분할
+//       ⚠ (4)를 방법항에 적용하면 단계 내부의 "~검출하고," 에서 잘못 끊긴다 → 말미 판정으로 차단
+function splitClaimLines(text) {
+  const NL = "@@NL@@";
+  let s = String(text).trim();
+  const isDeviceOrProgram = /(시스템|장치|서버|단말|프로그램)\.\s*$/.test(s);
+
+  s = s.replace(/^(제\d+항(?:\s*내지\s*제\d+항)?에 있어서,)\s*/, (m, g1) => g1 + NL);
+  s = s.replace(/(단계;\s*및)\s*/g, () => "단계; 및" + NL);
+  s = s.replace(/(단계;)(?!\s*및)\s*/g, (m, g1) => g1 + NL);
+  if (isDeviceOrProgram) {
+    s = s.replace(/(부;\s*및)\s*/g, () => "부; 및" + NL);
+    s = s.replace(/(하고,|하며,)\s*/g, (m, g1) => g1 + NL);
+  }
+
+  return s.split(NL).map(t => t.trim()).filter(Boolean);
+}
+
+// 청구항 단락 (LAYOUT.claim_tab / claim_linebreak 에 따라 서식·분할 결정)
 function claimPara(text) {
+  if (LAYOUT.claim_tab) return tabPara(text);
   return new Paragraph({
     alignment: AlignmentType.LEFT,
     spacing: {
@@ -120,12 +185,17 @@ function claimPara(text) {
       after: SPACING.para_after,
       line: SPACING.line
     },
-    indent: {
-      firstLine: INDENT.claim_first_line,
-      hanging: INDENT.claim_hanging
-    },
+    indent: INDENT.claim_hanging
+      ? { firstLine: INDENT.claim_first_line, hanging: INDENT.claim_hanging }
+      : { firstLine: INDENT.claim_first_line },
     children: [runK(text, { size: SIZE.body })]
   });
+}
+
+// 청구항 1건 → 문단 배열
+function claimParas(text) {
+  const lines = LAYOUT.claim_linebreak ? splitClaimLines(text) : [String(text).trim()];
+  return lines.map(l => claimPara(l));
 }
 
 // 빈 단락 (섹션 간 간격)
@@ -169,6 +239,7 @@ function buildDrawingsBrief(drawings) {
     blocks.push(new Paragraph({
       alignment: AlignmentType.LEFT,
       spacing: { after: SPACING.para_after, line: SPACING.line },
+      indent: LAYOUT.drawings_indent ? { firstLine: INDENT.body_first_line } : {},
       children: [runK(`${d.fig}${figJosa(d.fig)} ${d.desc}`, { size: SIZE.body })]
     }));
   });
@@ -197,12 +268,14 @@ function buildClaims(claims) {
     if (typeof c === "string") {
       // 헤더 자동 생성
       blocks.push(sectionTitle(`【청구항 ${idx + 1}】`, { level: 2 }));
-      blocks.push(claimPara(c));
+      blocks.push(...claimParas(c));
     } else if (c && typeof c === "object") {
       const num = c.num || idx + 1;
       blocks.push(sectionTitle(`【청구항 ${num}】`, { level: 2 }));
-      const body = Array.isArray(c.text) ? c.text : [c.text];
-      body.forEach(b => blocks.push(claimPara(b)));
+      // text가 배열이면 이미 사용자가 줄을 나눈 것으로 보고 자동 분할하지 않는다
+      const body = Array.isArray(c.text) ? c.text : null;
+      if (body) body.forEach(b => blocks.push(claimPara(b)));
+      else blocks.push(...claimParas(c.text));
     }
   });
   return blocks;
@@ -255,7 +328,9 @@ function buildDocument(content) {
 
   if (content.invention_title) {
     children.push(sectionTitle("【발명의 명칭】", { level: 2 }));
-    children.push(bodyPara(content.invention_title, { noIndent: true }));
+    children.push(LAYOUT.claim_tab
+      ? tabPara(content.invention_title)   // 사무소 서식: 명칭도 탭 들여쓰기
+      : bodyPara(content.invention_title, { noIndent: !LAYOUT.title_indent }));
   }
 
   if (content.technical_field) {
@@ -340,7 +415,8 @@ function buildDocument(content) {
         page: {
           size: { width: 11906, height: 16838 },  // A4 (DXA)
           margin: {
-            top: 1440, right: 1080, bottom: 1440, left: 1080
+            top: LAYOUT.margin.top, right: LAYOUT.margin.right,
+            bottom: LAYOUT.margin.bottom, left: LAYOUT.margin.left
           }
         }
       },
@@ -383,6 +459,7 @@ function main() {
   // content 로드
   const absContentPath = path.resolve(contentPath);
   const content = require(absContentPath);
+  applyLayout(content.layout);
 
   // 기본 output 경로
   if (!outputPath) {

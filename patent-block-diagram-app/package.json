@@ -1,0 +1,55 @@
+{
+  "name": "patent-block-diagram",
+  "version": "0.5.1",
+  "description": "특허 도면용 블록도 에디터",
+  "author": "iseongjae",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node tests/arrow-size.cdp.mjs && node tests/hatch-fill.cdp.mjs",
+    "dist:win": "electron-builder --win nsis --x64",
+    "dist:mac": "electron-builder --mac dmg"
+  },
+  "build": {
+    "appId": "com.iseongjae.patent-block-diagram",
+    "productName": "PatentBlockDiagram",
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "style.css",
+      "app.js",
+      "node_modules/mathjax/es5/tex-svg.js"
+    ],
+    "fileAssociations": [
+      {
+        "ext": "pbd",
+        "name": "PatentBlockDiagram",
+        "description": "특허 블록도 도면 파일",
+        "role": "Editor"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.0"
+  },
+  "dependencies": {
+    "mathjax": "^3.2.2"
+  }
+}
