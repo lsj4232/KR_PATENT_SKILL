@@ -229,7 +229,8 @@ function buildDocument(content) {
     children.push(...buildSection("【발명을 실시하기 위한 구체적인 내용】", content.detailed_description));
   }
 
-  if (content.symbols) {
+  // 부호의 설명 섹션 — 한국 변리사 실무상 default 생략. symbols가 없거나 빈 배열이면 건너뜀.
+  if (content.symbols && content.symbols.length > 0) {
     children.push(...buildSymbols(content.symbols));
   }
 
