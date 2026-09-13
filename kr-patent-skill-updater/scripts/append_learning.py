@@ -33,6 +33,15 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# Windows cp949 콘솔에서도 ✓, ⚠ 등 비-ASCII 문자가 안전하게 출력되도록 stdout/stderr를 UTF-8로 재설정
+for _stream_name in ("stdout", "stderr"):
+    _s = getattr(sys, _stream_name, None)
+    if _s is not None and hasattr(_s, "reconfigure"):
+        try:
+            _s.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
 
 # 누적 학습 항목 섹션의 헤더 패턴
 # (좌측 정렬된 "### 누적 학습 항목" 또는 그 변형들 매칭)
