@@ -1,0 +1,14 @@
+{
+  "name": "kr-patent-docx-builder",
+  "version": "0.1.0",
+  "description": "Korean patent specification docx builder for Claude skill",
+  "private": true,
+  "main": "scripts/build_kr_patent.js",
+  "scripts": {
+    "build": "node scripts/build_kr_patent.js"
+  },
+  "dependencies": {
+    "docx": "^8.5.0"
+  },
+  "license": "MIT"
+}
