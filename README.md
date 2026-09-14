@@ -225,7 +225,7 @@ python3 kr-patent-skill-updater/scripts/append_learning.py \
 - 부정 한정: "다만, 이에 한정되지 않는다."
 
 ### 정합성 점검 (출원 전 마지막 게이트)
-`kr-patent-consistency-check`가 명세서·도면·청구항 3자 정합성과 S1~S14 정형 준수를 점검하고, 위반을 **Priority A/B/C**로 분류하여 6항목 정형(번호/위치/근거규칙/현황/수정안/부가설명)으로 수정안을 제시한다. 사용자 승인 후 tracked changes(author=IPLAB)로 `.docx`에 반영한다. `kr-patent-ralph-loop`은 이 점검을 결함 0이 될 때까지 자동 반복한다(기본 종료조건 0 Priority A, 최대 5회).
+`kr-patent-consistency-check`가 명세서·도면·청구항 3자 정합성과 S1~S14 정형 준수를 점검하고, 위반을 **Priority A/B/C**로 분류하여 6항목 정형(번호/위치/근거규칙/현황/수정안/부가설명)으로 수정안을 제시한다. 사용자 승인 후 tracked changes로 `.docx`에 반영한다. `kr-patent-ralph-loop`은 이 점검을 결함 0이 될 때까지 자동 반복한다(기본 종료조건 0 Priority A, 최대 5회).
 
 ### 명세서 양식 (docx)
 - 폰트: 나눔고딕
