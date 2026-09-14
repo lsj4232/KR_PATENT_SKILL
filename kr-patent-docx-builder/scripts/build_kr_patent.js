@@ -38,13 +38,13 @@ const {
 // 표준 양식 상수 (한국 특허청 별지 양식 기준)
 // =============================================================================
 
-const FONT = "나눔고딕";
+const FONT = "맑은 고딕";
 
 const SIZE = {
-  section_title: 24,  // 12pt - 【발명의 명칭】 등
-  sub_title: 22,      // 11pt
-  body: 22,           // 11pt - 본문
-  small: 20           // 10pt - 부호 표 등
+  section_title: 24,  // 12pt - 【발명의 명칭】 등 (본문과 동일 크기, bold로만 구분)
+  sub_title: 24,      // 12pt
+  body: 24,           // 12pt - 본문
+  small: 22           // 11pt - 부호 표 등
 };
 
 const INDENT = {
@@ -57,7 +57,7 @@ const SPACING = {
   section_before: 480,
   section_after: 240,
   para_after: 120,
-  line: 360
+  line: 480           // 2.0배 줄간격 (240=1.0, 360=1.5, 480=2.0)
 };
 
 // =============================================================================
@@ -80,7 +80,11 @@ function runK(text, opts = {}) {
 }
 
 // 섹션 타이틀: 【발명의 명칭】 등
-function sectionTitle(text) {
+// opts.level: 1 = 최상위(【발명의 설명】·【청구범위】·【요약서】·【대표도】),
+//             2 = 표준 섹션(default),
+//             3 = 【발명의 내용】 하위(【해결하고자 하는 과제】·【과제의 해결 수단】·【발명의 효과】)
+function sectionTitle(text, opts = {}) {
+  const level = typeof opts.level === "number" ? opts.level : 2;
   return new Paragraph({
     alignment: AlignmentType.LEFT,
     spacing: {
@@ -88,6 +92,7 @@ function sectionTitle(text) {
       after: SPACING.section_after,
       line: SPACING.line
     },
+    outlineLevel: level - 1,  // docx는 0-based: Level 1 → outlineLevel 0
     children: [runK(text, { size: SIZE.section_title, bold: true })]
   });
 }
@@ -135,8 +140,8 @@ function emptyPara() {
 // 섹션 빌더
 // =============================================================================
 
-function buildSection(title, paragraphs) {
-  const blocks = [sectionTitle(title)];
+function buildSection(title, paragraphs, opts = {}) {
+  const blocks = [sectionTitle(title, opts)];
   if (Array.isArray(paragraphs)) {
     paragraphs.forEach(p => {
       if (typeof p === "string") {
@@ -152,13 +157,19 @@ function buildSection(title, paragraphs) {
 }
 
 // 도면의 간단한 설명 빌더
+// 조사 은/는: 도면 번호 끝자리의 한국어 독음 받침 기준 (영·일·삼·육·칠·팔=은 / 이·사·오·구=는)
+function figJosa(fig) {
+  const m = String(fig).match(/(\d)\s*$/);
+  if (!m) return "은";
+  return "2459".includes(m[1]) ? "는" : "은";
+}
 function buildDrawingsBrief(drawings) {
-  const blocks = [sectionTitle("【도면의 간단한 설명】")];
+  const blocks = [sectionTitle("【도면의 간단한 설명】", { level: 2 })];
   drawings.forEach(d => {
     blocks.push(new Paragraph({
       alignment: AlignmentType.LEFT,
       spacing: { after: SPACING.para_after, line: SPACING.line },
-      children: [runK(`${d.fig}은 ${d.desc}`, { size: SIZE.body })]
+      children: [runK(`${d.fig}${figJosa(d.fig)} ${d.desc}`, { size: SIZE.body })]
     }));
   });
   return blocks;
@@ -166,7 +177,7 @@ function buildDrawingsBrief(drawings) {
 
 // 부호의 설명 빌더 (표 형태도 가능하지만 한국 실무는 줄 단위가 일반적)
 function buildSymbols(symbols) {
-  const blocks = [sectionTitle("【부호의 설명】")];
+  const blocks = [sectionTitle("【부호의 설명】", { level: 2 })];
   symbols.forEach(s => {
     blocks.push(new Paragraph({
       alignment: AlignmentType.LEFT,
@@ -178,10 +189,56 @@ function buildSymbols(symbols) {
 }
 
 // 청구범위 빌더
+// claims는 (a) 문자열 배열 — 청구항 본문만 — 또는 (b) {num, text} 객체 배열
+//   객체 배열로 주면 각 청구항마다 【청구항 N】 헤더(Level 2 outline)를 출력
 function buildClaims(claims) {
-  const blocks = [sectionTitle("【청구범위】")];
-  claims.forEach(c => {
-    blocks.push(claimPara(c));
+  const blocks = [sectionTitle("【청구범위】", { level: 1 })];
+  claims.forEach((c, idx) => {
+    if (typeof c === "string") {
+      // 헤더 자동 생성
+      blocks.push(sectionTitle(`【청구항 ${idx + 1}】`, { level: 2 }));
+      blocks.push(claimPara(c));
+    } else if (c && typeof c === "object") {
+      const num = c.num || idx + 1;
+      blocks.push(sectionTitle(`【청구항 ${num}】`, { level: 2 }));
+      const body = Array.isArray(c.text) ? c.text : [c.text];
+      body.forEach(b => blocks.push(claimPara(b)));
+    }
+  });
+  return blocks;
+}
+
+// 도면 페이지 빌더 — 【도면】 컨테이너 (L1) + 【도면 N】 개별 페이지 (L2)
+function buildDrawingsSection(figures) {
+  const blocks = [sectionTitle("【도면】", { level: 1 })];
+  figures.forEach((f, idx) => {
+    const num = (f && f.num) || idx + 1;
+    blocks.push(sectionTitle(`【도면 ${num}】`, { level: 2 }));
+    if (f && f.caption) {
+      blocks.push(bodyPara(f.caption, { noIndent: true }));
+    }
+  });
+  return blocks;
+}
+
+// 실시예 본문 소제목 — Level 3 (1., 2., ...) / Level 4 (2-1., 6-1., ...)
+// detailed_description 콘텐츠가 객체({heading, level, paragraphs})로 들어오면 sub-heading 출력
+function buildDetailedDescription(items) {
+  const blocks = [sectionTitle("【발명을 실시하기 위한 구체적인 내용】", { level: 2 })];
+  items.forEach(item => {
+    if (typeof item === "string") {
+      blocks.push(bodyPara(item));
+    } else if (item && typeof item === "object") {
+      if (item.heading) {
+        const lvl = item.level || 3;  // default L3
+        blocks.push(sectionTitle(`【${item.heading}】`, { level: lvl }));
+      }
+      const paras = item.paragraphs || [];
+      paras.forEach(p => {
+        if (typeof p === "string") blocks.push(bodyPara(p));
+        else if (p && typeof p === "object") blocks.push(p);
+      });
+    }
   });
   return blocks;
 }
@@ -193,32 +250,35 @@ function buildClaims(claims) {
 function buildDocument(content) {
   const children = [];
 
-  // [발명의 설명] 큰 컨테이너
+  // 【발명의 설명】 — Level 1 컨테이너 (Word 탐색 창 최상위)
+  children.push(sectionTitle("【발명의 설명】", { level: 1 }));
+
   if (content.invention_title) {
-    children.push(sectionTitle("【발명의 명칭】"));
+    children.push(sectionTitle("【발명의 명칭】", { level: 2 }));
     children.push(bodyPara(content.invention_title, { noIndent: true }));
   }
 
   if (content.technical_field) {
     children.push(...buildSection("【기술분야】",
-      Array.isArray(content.technical_field) ? content.technical_field : [content.technical_field]));
+      Array.isArray(content.technical_field) ? content.technical_field : [content.technical_field],
+      { level: 2 }));
   }
 
   if (content.background) {
-    children.push(...buildSection("【발명의 배경이 되는 기술】", content.background));
+    children.push(...buildSection("【발명의 배경이 되는 기술】", content.background, { level: 2 }));
   }
 
   if (content.problem_to_solve) {
-    children.push(...buildSection("【발명의 내용】", []));
-    children.push(...buildSection("【해결하고자 하는 과제】", content.problem_to_solve));
+    children.push(...buildSection("【발명의 내용】", [], { level: 2 }));
+    children.push(...buildSection("【해결하고자 하는 과제】", content.problem_to_solve, { level: 3 }));
   }
 
   if (content.solution) {
-    children.push(...buildSection("【과제의 해결 수단】", content.solution));
+    children.push(...buildSection("【과제의 해결 수단】", content.solution, { level: 3 }));
   }
 
   if (content.effects) {
-    children.push(...buildSection("【발명의 효과】", content.effects));
+    children.push(...buildSection("【발명의 효과】", content.effects, { level: 3 }));
   }
 
   if (content.drawings_brief) {
@@ -226,7 +286,7 @@ function buildDocument(content) {
   }
 
   if (content.detailed_description) {
-    children.push(...buildSection("【발명을 실시하기 위한 구체적인 내용】", content.detailed_description));
+    children.push(...buildDetailedDescription(content.detailed_description));
   }
 
   // 부호의 설명 섹션 — 한국 변리사 실무상 default 생략. symbols가 없거나 빈 배열이면 건너뜀.
@@ -241,14 +301,20 @@ function buildDocument(content) {
 
   // 요약서
   if (content.abstract) {
-    children.push(...buildSection("【요약서】", []));
+    children.push(...buildSection("【요약서】", [], { level: 1 }));
     children.push(...buildSection("【요약】",
-      Array.isArray(content.abstract) ? content.abstract : [content.abstract]));
+      Array.isArray(content.abstract) ? content.abstract : [content.abstract],
+      { level: 2 }));
   }
 
-  // 대표도
+  // 대표도 — Level 2 (요약서 컨테이너 하위 또는 독립)
   if (content.metadata && content.metadata.representative_drawing) {
-    children.push(...buildSection("【대표도】", [content.metadata.representative_drawing]));
+    children.push(...buildSection("【대표도】", [content.metadata.representative_drawing], { level: 2 }));
+  }
+
+  // 도면 페이지 (【도면】 컨테이너 + 【도면 N】) — Level 1 + Level 2
+  if (content.figures && content.figures.length > 0) {
+    children.push(...buildDrawingsSection(content.figures));
   }
 
   // Document 객체 생성
@@ -346,6 +412,7 @@ if (require.main === module) {
 
 module.exports = {
   buildDocument,
-  runK, bodyPara, claimPara, sectionTitle, buildSection, buildSymbols, buildClaims, buildDrawingsBrief,
+  runK, bodyPara, claimPara, sectionTitle, buildSection,
+  buildSymbols, buildClaims, buildDrawingsBrief, buildDrawingsSection, buildDetailedDescription,
   FONT, SIZE, INDENT, SPACING
 };
