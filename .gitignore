@@ -1,5 +1,6 @@
 # Backup files (auto-created by append_learning.py)
 *.bak.*
+*.bak[0-9]*.*
 
 # Node modules (docx package can be installed globally or locally)
 node_modules/
