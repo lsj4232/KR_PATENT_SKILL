@@ -264,6 +264,8 @@ OK 받으면 본문 작성.
 - **Stage 0에서 판정한 프로파일에 따라 규범을 로드한다.**
   - G: `kr-patent-spec-drafting/references/sw-ai-spec-supplement.md` (볼륨 V1~V7, 실시예 L1~L4, 챕터 목차, G1~G4 필수 서술)
   - H: `kr-patent-spec-drafting/references/hw-mechanical-spec-rules.md` (유형 A/B 구조, 독립항 확정형 어미, 도면 순차 참조, 섹션 마무리 효과 문단, 마감 문단)
+- **해외출원(미국, PCT) 가능성이 있고 프로그램 청구항을 두는 건이면 `kr-patent-spec-drafting/references/overseas-crm-support.md`를 함께 로드한다.** 저장매체 지지문언은 S4와 S14 0파트 두 곳에 **최초 명세서 단계에서만** 넣을 수 있다(이후 보정 불가). 착수 시 사용자에게 해외출원 예정 여부를 1회 확인한다.
+- **도면이 미확보이거나 신규 설계가 필요하면 `kr-patent-spec-drafting/references/drawing-set-design.md`를 로드하고, S11 서두보다 S12(도면 세트 설계)를 먼저 수행한다.** 산출물에 도면별 대응 청구항 매핑표와 도면 뒷받침이 없는 청구항 목록을 포함시킨다.
 - 섹션 순서대로 작성:
   - 발명의 명칭 → 기술분야 → 배경 → 과제 → 수단 → 효과 → 도면설명 → 실시예 → 부호설명 → 청구범위 → 요약
 - 작성 중간에 사용자에게 보고:
