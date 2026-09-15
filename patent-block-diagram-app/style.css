@@ -1,0 +1,150 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --font-gothic: 'Apple SD Gothic Neo', 'Malgun Gothic', '맑은 고딕', 'Noto Sans KR', sans-serif;
+}
+
+html, body {
+  height: 100%;
+  font-family: var(--font-gothic);
+  overflow: hidden;
+}
+
+#toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #ccc;
+  background: #f5f5f5;
+  user-select: none;
+}
+
+#toolbar button {
+  font-family: var(--font-gothic);
+  font-size: 13px;
+  padding: 6px 12px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+}
+
+#toolbar button:hover:not(:disabled) { background: #eaf2fc; }
+#toolbar button:disabled { opacity: 0.4; cursor: default; }
+#toolbar button.active { background: #2b7de9; color: white; border-color: #2b7de9; }
+
+#edit-text {
+  font-family: var(--font-gothic);
+  font-size: 13px;
+  line-height: 16px;
+  width: 240px;
+  height: 38px;
+  padding: 3px 6px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  resize: none;
+  outline: none;
+}
+
+#edit-text:focus { border-color: #2b7de9; }
+#edit-text:disabled { background: #eee; }
+
+#toolbar .sep {
+  width: 1px;
+  height: 20px;
+  background: #ccc;
+  margin: 0 4px;
+}
+
+#hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: #888;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#scroll {
+  height: calc(100% - 45px);
+  overflow: auto;
+  background: #e8e8e8;
+}
+
+#wrap {
+  position: relative;
+  width: 2400px;
+  height: 1600px;
+  zoom: 1;              /* Ctrl+휠 확대/축소 (레이아웃까지 스케일되어 스크롤이 맞게 늘어남) */
+}
+
+#zoom-label {
+  font-size: 12px;
+  color: #666;
+  min-width: 44px;
+  text-align: right;
+  user-select: none;
+}
+
+#fs-label {
+  font-size: 12px;
+  color: #666;
+  min-width: 32px;
+  text-align: center;
+  user-select: none;
+}
+
+#sel-label {
+  font-size: 12px;
+  color: #2b7de9;
+  min-width: 56px;
+  user-select: none;
+}
+
+#msg {
+  font-size: 12px;
+  color: #c26a00;
+  white-space: nowrap;
+  user-select: none;
+}
+
+#tol {
+  font-family: var(--font-gothic);
+  font-size: 13px;
+  width: 56px;
+  padding: 5px 4px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  outline: none;
+}
+
+#tol:focus { border-color: #2b7de9; }
+
+#canvas {
+  display: block;
+  background: white;
+  font-family: var(--font-gothic);
+}
+
+#canvas g.el { cursor: move; }
+/* 투명색 지정 모드에서는 어디를 눌러도 색을 찍는 동작이므로 커서를 스포이드처럼 바꾼다 */
+body.pick #canvas, body.pick #canvas g.el { cursor: crosshair; }
+#canvas [data-type="resize"] { cursor: nwse-resize; }
+#canvas [data-type="ep"] { cursor: crosshair; }
+#canvas [data-type="bend"][data-axis="x"] { cursor: ew-resize; }
+#canvas [data-type="bend"][data-axis="y"] { cursor: ns-resize; }
+#canvas text { user-select: none; }
+
+.overlay-edit {
+  position: absolute;
+  font-family: var(--font-gothic);
+  font-size: 15px;
+  line-height: 20px;
+  text-align: center;
+  border: 1.5px dashed #2b7de9;
+  background: white;
+  resize: none;
+  outline: none;
+  padding-top: 4px;
+}

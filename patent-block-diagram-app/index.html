@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>특허 블록도 에디터</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- 수식(LaTeX) 렌더링. 반드시 SVG 출력이어야 한다 —
+       PNG 내보내기는 SVG를 data URL 로 만들어 <img> 로 그리는데,
+       그 문맥에서는 HTML(CHTML·foreignObject)이 렌더되지 않는다.
+       fontCache:'none' 은 글리프를 <use> 참조가 아니라 <path> 로 직접 박아
+       도면 여러 개를 한 SVG 에 담아도 id 충돌이 없게 한다. -->
+  <script>
+    window.MathJax = {
+      loader: { load: ['input/tex', 'output/svg'] },
+      tex: { packages: { '[+]': ['ams'] } },
+      svg: { fontCache: 'none' },
+      startup: {
+        typeset: false,
+        ready() {
+          MathJax.startup.defaultReady()
+          window.dispatchEvent(new Event('mathjax-ready'))
+        }
+      }
+    }
+  </script>
+  <script src="node_modules/mathjax/es5/tex-svg.js"></script>
+</head>
+<body>
+  <div id="toolbar">
+    <button id="btn-box">박스</button>
+    <button id="btn-round">둥근 박스</button>
+    <button id="btn-diamond">마름모</button>
+    <button id="btn-cyl">원기둥</button>
+    <button id="btn-cloud" title="네트워크·외부 서버용 구름">구름</button>
+    <button id="btn-person" title="이용자 아이콘">사용자</button>
+    <button id="btn-text" title="테두리 없는 글자만">텍스트</button>
+    <button id="btn-image" title="이미지 파일 넣기 (캔버스에 끌어다 놓거나 ⌘/Ctrl+V 붙여넣기도 됨)">이미지</button>
+    <span class="sep"></span>
+    <button id="btn-pick" title="누른 뒤 이미지에서 없앨 색을 클릭. 같은 색이 전부 투명해진다">투명색</button>
+    <input id="tol" type="number" min="0" max="255" step="5" value="30" title="색 허용오차 (JPEG·안티에일리어싱은 값을 올린다)">
+    <button id="btn-img-reset" title="투명 처리 전 원본 이미지로">이미지 원본</button>
+    <span class="sep"></span>
+    <button id="btn-arrow">화살표 연결</button>
+    <button id="btn-tag">부호 태그</button>
+    <button id="btn-style">직선 ⇄ 직각</button>
+    <button id="btn-as-down" title="선과 화살촉을 함께 작게">화살표⁻</button>
+    <span id="as-label">-</span>
+    <button id="btn-as-up" title="선과 화살촉을 함께 크게">화살표⁺</button>
+    <button id="btn-as-reset" title="화살표 기본 크기(4pt)로">기본</button>
+    <button id="btn-dash">실선 ⇄ 점선</button>
+    <button id="btn-frame" title="테두리·음영을 없애 글자만 남긴다">테두리 ⇄ 없음</button>
+    <button id="btn-hatch" title="채움을 흰칠 → 빗금 → 점무늬 순으로 돌린다. 표 머리행·합계행 강조용">채움 바꾸기</button>
+    <button id="btn-math" title="박스 글자를 LaTeX 수식으로 조판한다. 텍스트 칸에 TeX 를 그대로 쓴다">수식 ⇄ 글자</button>
+    <button id="btn-ep-reset" title="손으로 옮긴 끝점·꺾임을 자동 계산으로 되돌린다">경로 자동</button>
+    <span class="sep"></span>
+    <button id="btn-fs-down" title="글자 작게">가⁻</button>
+    <span id="fs-label">-</span>
+    <button id="btn-fs-up" title="글자 크게">가⁺</button>
+    <button id="btn-fs-reset" title="기본 크기(15)로">기본</button>
+    <span class="sep"></span>
+    <button id="btn-guides" title="이동 중 정렬·등간격 안내선. Alt를 누른 채 끌면 잠시 해제">스마트 가이드</button>
+    <span class="sep"></span>
+    <button id="btn-front">앞으로</button>
+    <button id="btn-back">뒤로</button>
+    <span class="sep"></span>
+    <span id="sel-label"></span>
+    <span id="msg"></span>
+    <textarea id="edit-text" rows="2" placeholder="박스를 선택하면 여기서 텍스트 편집" disabled></textarea>
+    <span class="sep"></span>
+    <button id="btn-del">삭제</button>
+    <span class="sep"></span>
+    <button id="btn-open">열기</button>
+    <button id="btn-save">저장</button>
+    <button id="btn-png">PNG 내보내기</button>
+    <span class="sep"></span>
+    <span id="zoom-label">100%</span>
+    <span id="hint">이미지: 끌어다 놓기·Ctrl+V (Ctrl+Shift+V=항상 캡처 붙여넣기) &nbsp;|&nbsp; 투명색: 버튼 누르고 없앨 색 클릭 &nbsp;|&nbsp; 도형 이동 시 붉은 파선=정렬, 양끝 화살표=등간격 (Alt=해제) &nbsp;|&nbsp; 직각 화살표 선택 → 주황 손잡이로 꺾임 이동 &nbsp;|&nbsp; Ctrl+A: 전체 선택 &nbsp;|&nbsp; Shift+클릭: 선택 추가/해제 &nbsp;|&nbsp; Ctrl+휠: 확대/축소 &nbsp;|&nbsp; Ctrl+0: 100% &nbsp;|&nbsp; 더블클릭: 텍스트 편집 &nbsp;|&nbsp; 빈 곳 더블클릭: 박스 생성 &nbsp;|&nbsp; ⌘C·⌘V: 복사/붙여넣기 &nbsp;|&nbsp; Delete: 삭제 &nbsp;|&nbsp; ⌘Z: 실행 취소</span>
+  </div>
+  <div id="scroll">
+    <div id="wrap">
+      <svg id="canvas" width="2400" height="1600"></svg>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

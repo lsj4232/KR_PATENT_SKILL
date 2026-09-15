@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.DS_Store
+
+# 사건 자료 (고객 비밀정보) — 저장소 포함 금지
+*.pbd
+*.png
+*.tif
+diagrams/
+도면*
+
+# 테스트 픽스처는 예외 (사건 자료 아님)
+!tests/fixtures/
+!tests/fixtures/*.pbd
