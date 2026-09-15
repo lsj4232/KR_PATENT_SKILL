@@ -29,6 +29,7 @@
 - **실행 가능한 도구 포함** — docx 빌더(`build_kr_patent.js`), 서식 동기화·탐색창 부여(python-docx), 스킬 업데이터(`append_learning.py`)가 실제 코드로 동작.
 - **자동 정제 루프** — `kr-patent-ralph-loop`이 결함 0이 될 때까지 점검 → 수정 → 재점검을 자동 반복하여 출원 직전 명세서를 수렴시킨다.
 - **컴파운딩 루프 자동화** — 메타 스킬(`kr-patent-skill-updater`)로 회고 → 학습 항목 누적이 자동화된다. 사용할수록 똑똑해진다.
+- **기술분야 프로파일 분기** — 착수 시 G 계열(AI, SW, 제어, 시스템)과 H 계열(기계, 전기전자, 화학)을 판정하여 서로 다른 규범을 적용한다. H 계열은 유형 A(단일 실시형태)와 유형 B(복수 실시형태)까지 구분하고, 독립항 대응 구성을 확정형 어미로 쓰는 등 SW 계열과 정형 자체가 다르다.
 - **전체 워크플로우 한 줄로** — `/full` 또는 "처음부터 끝까지"라고 하면 11단계가 자동 순차 실행되고, 변리사는 주요 결정 단계의 체크포인트에서만 승인한다.
 
 ## 📦 스킬 구성 (23개)
@@ -42,7 +43,7 @@
 | 청구항·부호 | [`kr-patent-drawing-mapping`](./kr-patent-drawing-mapping/) | 도면 이미지 OCR → 박스별 1:1 부호 매핑 표 |
 | 청구항·부호 | [`kr-patent-dependent-claim-drafting`](./kr-patent-dependent-claim-drafting/) | 종속항·시스템항·프로그램항·추가 독립항(청구항 2~N) 작성 |
 | 청구항·부호 | [`kr-patent-drawing-tagging`](./kr-patent-drawing-tagging/) | 도면 PNG에 부호 직접 삽입 (cv2 검출 + 충돌 회피 배치) |
-| 본문 작성 | [`kr-patent-spec-drafting`](./kr-patent-spec-drafting/) | 명세서 본문 작성 (S1~S14 정형 준수) |
+| 본문 작성 | [`kr-patent-spec-drafting`](./kr-patent-spec-drafting/) | 명세서 본문 작성 (S1~S14 정형 준수, S0 프로파일 분기로 G/H 계열 규범 선택) |
 | 본문 작성 | [`kr-patent-implementation-elaboration`](./kr-patent-implementation-elaboration/) | 추상 구성요소 3단 보강 (판단 기준 → 적용 방식 → 효과) |
 | 권리범위 보강 | [`kr-patent-definition-insertion`](./kr-patent-definition-insertion/) | 자체 사전 용어 정의 인라인 삽입 (4원칙) |
 | 권리범위 보강 | [`kr-patent-embodiment-addition`](./kr-patent-embodiment-addition/) | 16카테고리 변형 실시예 부가 (외연 확장) |
@@ -263,6 +264,16 @@ python3 kr-patent-skill-updater/scripts/append_learning.py \
 - 도면 박스 라벨에 청구항 한정 수치 노출 금지
 - 해결과제에 수단 시사("~을 이용하여") 금지 — 목적형으로만 기재
 - 본문에서 "청구항 X" / "단계 SXXX" 직접 언급 금지 (내부 작성 로직 노출 방지)
+
+### 기술분야 프로파일 (S0 분기)
+
+| 프로파일 | 대상 | 규범 |
+|---|---|---|
+| **G** | AI/ML, 데이터 처리 SW, 제어, 시스템/네트워크 | [`references/sw-ai-spec-supplement.md`](./kr-patent-spec-drafting/references/sw-ai-spec-supplement.md) — 볼륨 하한 V1~V7, 실시예 4계층 L1~L4, 챕터 목차 골격, G1~G4 유형별 필수 서술, 승인 게이트 |
+| **H** | 기계, 전기전자, 화학 | [`references/hw-mechanical-spec-rules.md`](./kr-patent-spec-drafting/references/hw-mechanical-spec-rules.md) — 유형 A/B 실시형태 판별, 독립항 확정형 어미, 배경기술 한계 중심 서술, 도면 순차 참조와 섹션 마무리 효과 문단, 외래어 한정 영문 병기, 마감 문단 정본 |
+| 혼합 | 장치항 + 제어 방법항 병존 | H 기본, 제어 방법항 부분만 G 정형 병용 |
+
+H 계열은 컴퓨터 판독 매체 정형 문구를 쓰지 않고, 도면 설명도 "도 1은 ~의 사시도이다" 형태로 도면 종류를 그대로 기재한다.
 
 ### 권장 표현
 - 독립항 풀어쓰기: "~한다." (단정) / 종속항: "~할 수 있다." (선택적)
