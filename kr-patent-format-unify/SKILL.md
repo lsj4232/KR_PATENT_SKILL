@@ -66,7 +66,7 @@ description: 한국 특허 명세서 .docx 안에서 후속 작업으로 신설�
 ### 일반 호출
 
 ```bash
-python "C:\Users\IPLAB\.claude\skills\kr-patent-format-unify\scripts\apply_format_unify.py" "<docx 경로>"
+python "~/.claude/skills\kr-patent-format-unify\scripts\apply_format_unify.py" "<docx 경로>"
 ```
 
 추가 옵션:

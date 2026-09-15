@@ -42,7 +42,7 @@ description: 한국 특허 명세서 .docx의 Word 탐색창(Navigation Pane)에
 사용자가 .docx 경로를 알려주면 다음 명령을 실행한다:
 
 ```bash
-python "C:\Users\IPLAB\.claude\skills\kr-patent-navigation-pane\scripts\apply_navigation_pane.py" "<docx 경로>"
+python "~/.claude/skills\kr-patent-navigation-pane\scripts\apply_navigation_pane.py" "<docx 경로>"
 ```
 
 추가 옵션:
