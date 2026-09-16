@@ -10,10 +10,20 @@ html, body {
   overflow: hidden;
 }
 
+/* 툴바가 줄바꿈되면 높이가 변하므로 본문을 세로 flex 로 잡아
+   캔버스 영역이 남은 높이를 알아서 차지하게 한다 (고정 45px 계산 폐기). */
+body {
+  display: flex;
+  flex-direction: column;
+}
+
 #toolbar {
   display: flex;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
   align-items: center;
   gap: 6px;
+  row-gap: 4px;
   padding: 8px 12px;
   border-bottom: 1px solid #ccc;
   background: #f5f5f5;
@@ -34,16 +44,21 @@ html, body {
 #toolbar button:disabled { opacity: 0.4; cursor: default; }
 #toolbar button.active { background: #2b7de9; color: white; border-color: #2b7de9; }
 
+/* 편집 칸은 툴바가 좁아도 절대 찌그러지지 않는다 (flex-shrink: 0).
+   기본 3줄이 보이고, 모서리를 끌어 세로로 더 키울 수 있다. */
 #edit-text {
   font-family: var(--font-gothic);
-  font-size: 13px;
-  line-height: 16px;
-  width: 240px;
-  height: 38px;
-  padding: 3px 6px;
+  font-size: 14px;
+  line-height: 20px;
+  flex: 1 1 420px;
+  min-width: 320px;
+  max-width: 640px;
+  height: 72px;
+  min-height: 46px;
+  padding: 5px 8px;
   border: 1px solid #bbb;
   border-radius: 4px;
-  resize: none;
+  resize: vertical;
   outline: none;
 }
 
@@ -59,6 +74,7 @@ html, body {
 
 #hint {
   margin-left: auto;
+  flex: 1 1 100%;
   font-size: 12px;
   color: #888;
   white-space: nowrap;
@@ -67,7 +83,8 @@ html, body {
 }
 
 #scroll {
-  height: calc(100% - 45px);
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   background: #e8e8e8;
 }
