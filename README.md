@@ -1,6 +1,6 @@
 9# KR_PATENT_SKILL
 
-한국 변리사 실무를 위한 Claude 스킬(Skills) 모음. 발명자 미팅, 독립항 작성, 부호 체계 설계, 도면 부호 매핑, 명세서 본문 작성, 권리범위 보강(용어 정의·변형 실시예), 정합성 점검, 자동 정제 루프, docx 출력·후처리, 회고를 통한 스킬 자동 업데이트, **전체 워크플로우 자동 오케스트레이션**까지 — 한국 특허 명세서 작성 전 과정을 **23개 스킬**로 커버한다. 여기에 도면 작도용 데스크톱 에디터(**특허 블록도 에디터**, Electron)와 그 에디터를 자동 구동하는 스킬 2종이 동봉되어, 블록도·구성도 도면까지 한 레포에서 만든다.
+한국 변리사 실무를 위한 Claude 스킬(Skills) 모음. 발명자 미팅, 독립항 작성, 부호 체계 설계, 도면 부호 매핑, 명세서 본문 작성, 권리범위 보강(용어 정의·변형 실시예), 정합성 점검, 자동 정제 루프, docx 출력·후처리, 회고를 통한 스킬 자동 업데이트, **전체 워크플로우 자동 오케스트레이션**까지 — 한국 특허 명세서 작성 전 과정을 **24개 스킬**로 커버한다. 최종 산출물은 한국 특허청 양식의 **워드(.docx)** 이며, 원하면 그 docx를 특허청 전자출원 편집기가 읽는 **`.hlz`로 변환하는 선택 옵션**도 제공한다. 여기에 도면 작도용 데스크톱 에디터(**특허 블록도 에디터**, Electron)와 그 에디터를 자동 구동하는 스킬 2종이 동봉되어, 블록도·구성도 도면까지 한 레포에서 만든다.
 
 > **스킬(Skills)이란?** Claude가 호출할 수 있는 절차적 지식 패키지. 단순 프롬프트보다 한 단계 위로, 설명(Description) + 지시사항(Instructions) + 도구(Tools)의 3계층 구조. 매번 같은 작업을 새로 설명할 필요 없이 Claude에게 "앱"처럼 호출할 수 있다.
 
@@ -18,7 +18,7 @@
 
 ## ✨ 특징
 
-- **조합 가능(Composable)** — 작고 집중된 23개 스킬. 전체 워크플로우 또는 일부만 선택적으로 사용.
+- **조합 가능(Composable)** — 작고 집중된 24개 스킬. 전체 워크플로우 또는 일부만 선택적으로 사용.
 - **한국 특허 실무 특화** — 한국 특허청(KIPO) 가이드라인을 자동 반영한다:
   - "종래" 표현 금지 — 종래기술을 자인하는 꼴이 될 수 있으므로 우회한다.
   - "구성되는" 표현 금지 — 영문 명세서 번역 시 권리범위가 한정될 수 있으므로 "포함하는"으로 쓴다.
@@ -32,7 +32,7 @@
 - **기술분야 프로파일 분기** — 착수 시 G 계열(AI, SW, 제어, 시스템)과 H 계열(기계, 전기전자, 화학)을 판정하여 서로 다른 규범을 적용한다. H 계열은 유형 A(단일 실시형태)와 유형 B(복수 실시형태)까지 구분하고, 독립항 대응 구성을 확정형 어미로 쓰는 등 SW 계열과 정형 자체가 다르다.
 - **전체 워크플로우 한 줄로** — `/full` 또는 "처음부터 끝까지"라고 하면 11단계가 자동 순차 실행되고, 변리사는 주요 결정 단계의 체크포인트에서만 승인한다.
 
-## 📦 스킬 구성 (23개)
+## 📦 스킬 구성 (24개)
 
 | 단계 | 스킬 이름 | 역할 |
 |---|---|---|
@@ -57,6 +57,7 @@
 | docx 인프라 | [`kr-patent-docx-builder`](./kr-patent-docx-builder/) | 한국 특허 양식 docx 빌드 |
 | docx 인프라 | [`kr-patent-format-unify`](./kr-patent-format-unify/) | 신설 단락 서식 동기화 (pPr·rPr 복사) |
 | docx 인프라 | [`kr-patent-navigation-pane`](./kr-patent-navigation-pane/) | Word 탐색창 outline level 자동 부여 |
+| 출력 옵션 | [`docx-to-hlz`](./docx-to-hlz/) | (선택) 완성 docx → 특허청 전자출원 편집기 `.hlz` 변환 |
 | 오케스트레이션 | [`kr-patent-full-workflow`](./kr-patent-full-workflow/) | **`/full` 전체 워크플로우 오케스트레이터 (11단계)** ★ |
 | 메타 | [`kr-patent-skill-updater`](./kr-patent-skill-updater/) | 회고 → 스킬 자동 업데이트 (컴파운딩 루프) |
 
@@ -122,6 +123,7 @@ Claude Code 또는 API에서 스킬 경로를 인식하도록 설정한다. 자�
 | `kr-patent-docx-builder` | Node.js ≥ 18, `docx` npm 패키지 (`^8.5.0`) |
 | `kr-patent-format-unify`, `kr-patent-navigation-pane` | Python ≥ 3.8, `python-docx` |
 | `kr-patent-skill-updater` | Python ≥ 3.8 (표준 라이브러리만 사용) |
+| `docx-to-hlz` (선택) | Python ≥ 3.8, `python-docx`, `Pillow` |
 | 나머지 11개 스킬 | 추가 의존성 없음 (텍스트 기반) |
 
 ## 🎯 빠른 시작 (사용 예)
@@ -373,6 +375,73 @@ H 계열은 컴퓨터 판독 매체 정형 문구를 쓰지 않고, 도면 설�
 - 페이지: A4, 표준 여백
 - 섹션 헤더: 【발명의 명칭】, 【기술분야】, …
 
+## 📤 (선택) 특허청 편집기 파일 `.hlz` 변환 — `docx-to-hlz`
+
+이 패키지의 **기본 산출물은 한국 특허청 양식의 워드 파일(`.docx`)** 이다. 대부분의 사무소는 그
+docx를 그대로 검토하고 회람하며, 전자출원 단계에서만 편집기로 옮긴다. 그 마지막 한 걸음을 자동화하고
+싶을 때만 쓰는 **선택 옵션**이 [`docx-to-hlz`](./docx-to-hlz/) 이다. 쓰지 않아도 전체 워크플로우는
+그대로 완결된다.
+
+```
+[kr-patent-docx-builder] → 명세서.docx   ← 기본 산출물 (여기서 끝나도 됨)
+                                │
+                                └─(선택)─▶ [docx-to-hlz] → 명세서.hlz → 편집기에서 열기
+```
+
+### 무엇을 만드나
+
+`.hlz` 는 특허청 전자출원 편집기(통합명세서작성기 **NKEditor**, 신형 "지식재산처 전자문서 작성 S/W")가
+여는 파일로, 실체는 **표준 ZIP = KIPO `application-body` XML 1개 + `patNNNNN` 도면 이미지** 이다.
+워드의 【식별항목】 태그(【발명의 명칭】【기술분야】【배경기술】【해결하고자 하는 과제】【과제의 해결 수단】
+【발명의 효과】【도면의 간단한 설명】【발명을 실시하기 위한 구체적인 내용】【청구범위】【요약】【대표도】
+【도면】)를 KIPO XML 요소로 매핑한다.
+
+```bash
+pip install python-docx Pillow
+
+python docx-to-hlz/scripts/docx2hlz.py "명세서.docx"            # → 같은 폴더에 명세서.hlz
+python docx-to-hlz/scripts/docx2hlz.py "명세서.docx" -o out.hlz
+```
+
+변환 뒤 편집기에서 **[파일 > 열기]로 `.hlz` 선택**(또는 창에 드래그&드롭). 편집기 GUI 조작은
+자동화 대상이 아니므로 여는 것은 사람이 한다.
+
+### 스크립트가 자동으로 지키는 편집기 호환 규칙
+
+| # | 규칙 | 어기면 |
+|---|---|---|
+| 1 | ZIP 엔트리 파일명 **CP949 + UTF-8 플래그(0x800) 제거** | 구 MFC 편집기가 압축해제 자체를 실패 → "…SGM 을(를) 찾을 수 없습니다" |
+| 2 | 내부 XML basename == `.hlz` basename | 편집기가 문서 파일을 못 찾음 |
+| 3 | `img-format` 은 DTD 허용값 `jpg`/`tif` 만 (tiff는 tif로, png와 bmp와 gif는 jpg로 재인코딩) | 로딩 실패 |
+| 4 | 청구항은 `<claim-text>` 한 덩어리 + `<br/>`, 작성자 메모 `//…//` 제거 | 청구항 깨짐, 메모 노출 |
+| 5 | `<p num>` 은 description 전관통 4자리 일련번호(abstract만 접미사 `a`) | 단락번호 어긋남 |
+| 6 | 도면 표시크기 `he`/`wi` 는 mm, **최대 165 × 222mm** | 검증기 E-218 |
+
+1번이 가장 자주 틀리는 지점이다. 파이썬 `zipfile` 기본값은 한글 파일명에 UTF-8 플래그를 세우는데,
+구형 편집기는 그 엔트리를 찾지 못한다(`ZipInfo._encodeFilenameFlags` 오버라이드로 해결).
+
+### 변환 후 권장 검증
+
+ZIP 무결성과 전 엔트리 `flag_bits & 0x800 == 0`, XML well-formed, `file=` 참조 ↔ 실제 `patNNNNN` 일치,
+이미지 무결성, 청구범위 내 `//` 잔존 0, 청구항 수와 도면 수, 대표도 `figref`, `he`/`wi` 한도.
+
+### `.HLT` 가 목적이라면
+
+`.HLT` 는 `HAN Lite` 독자 바이너리라 외부 생성이 불가능하다. 경로는 하나뿐이다.
+
+```
+docx ──[docx-to-hlz]──▶ .hlz ──[NKEditor로 열기 → 다른 이름으로 저장]──▶ .HLT
+```
+
+신형 "지식재산처 전자문서 작성 S/W"에서 저장하면 네이티브 형식이 `.hwpx` 가 된다. `.HLT` 가
+필요하면 구형 통합명세서작성기로 열어 저장한다.
+
+### 알려진 제약
+
+- **표(table) 미지원.** 현재 변환기는 문단과 이미지만 다룬다. 표가 있는 명세서는 확장이 필요하다.
+- 입력 워드가 KIPO 별지 서식 【식별항목】 태그로 구분돼 있어야 한다. 탐색창용 비표준 소제목
+  (예 【1. 용어의 정의】)은 본문 문단으로 흡수된다.
+
 ## 🤝 기여 방법
 
 이 프로젝트는 한국 변리사 커뮤니티의 집단 지성으로 성장한다.
@@ -424,7 +493,7 @@ GitHub KIPO Korean patent skill SKILL.md claude
 
 GitHub patent specification drafting LLM open source
 
-**KR_PATENT_SKILL** is a suite of **23 composable Claude Skills** for Korean patent attorneys (변리사), covering the entire pre-filing drafting workflow — from inventor interviews through claim drafting, reference-numeral design, specification writing, scope reinforcement, consistency checking, automated refinement, and KIPO-format `.docx` output — plus prior-art search, drawing numeral tagging, block-diagram drafting, and a meta-skill that compounds lessons learned back into the skills. A companion Electron desktop app (**Patent Block Diagram editor**, `patent-block-diagram-app/`) ships in this repo; the `patent-block-diagram` skill drives it over CDP to produce filing-ready drawings without mouse work.
+**KR_PATENT_SKILL** is a suite of **24 composable Claude Skills** for Korean patent attorneys (변리사), covering the entire pre-filing drafting workflow — from inventor interviews through claim drafting, reference-numeral design, specification writing, scope reinforcement, consistency checking, automated refinement, and KIPO-format `.docx` output — plus prior-art search, drawing numeral tagging, block-diagram drafting, and a meta-skill that compounds lessons learned back into the skills. A companion Electron desktop app (**Patent Block Diagram editor**, `patent-block-diagram-app/`) ships in this repo; the `patent-block-diagram` skill drives it over CDP to produce filing-ready drawings without mouse work.
 
 | Phase | Skill | Role |
 |---|---|---|
@@ -451,7 +520,8 @@ GitHub patent specification drafting LLM open source
 | Drawings | `patent-block-diagram-refine` | Revise an existing `.pbd` drawing set, keep numerals consistent |
 | Orchestration | `kr-patent-full-workflow` | `/full` end-to-end orchestrator (11 stages) |
 | Meta | `kr-patent-skill-updater` | Retrospective → auto-update skills (compounding loop) |
+| Output option | `docx-to-hlz` | *(optional)* Convert the finished `.docx` into `.hlz` for the KIPO e-filing editor |
 
 **Key ideas.** The skills encode Korean patent drafting rules — avoiding prior-art-admitting wording ("종래"), avoiding scope-narrowing wording ("구성되는"), the 3-step causal structure for effects (structure → mechanism → benefit), and keeping claim-limiting numerals out of the background/drawings — and enforce experiment-converged formal templates. A **compounding loop** (`kr-patent-skill-updater`) appends lessons to each skill's `누적 학습 항목` section, so the package gets smarter with use.
 
-**Quick start.** `git clone`, then either upload each skill folder to Claude.ai Skills, point Claude Code/API at the skill path, or paste a `SKILL.md` into the chat. Type `/full` (or "처음부터 끝까지") to run the full 11-stage pipeline; the attorney signs off only at the key decision checkpoints. Provided as-is; have a qualified Korean patent attorney review before filing. Licensed under [MIT](./LICENSE).
+**Quick start.** `git clone`, then either upload each skill folder to Claude.ai Skills, point Claude Code/API at the skill path, or paste a `SKILL.md` into the chat. Type `/full` (or "처음부터 끝까지") to run the full 11-stage pipeline; the attorney signs off only at the key decision checkpoints. The primary deliverable is a KIPO-format Word file; `docx-to-hlz` is an **optional** last step that repackages it as `.hlz` (a ZIP of KIPO `application-body` XML + drawings) for the e-filing editor. Provided as-is; have a qualified Korean patent attorney review before filing. Licensed under [MIT](./LICENSE).
