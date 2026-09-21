@@ -17,12 +17,16 @@ if (!src || !out) {
 
 // 포트는 PBD_PORT 로 바꿀 수 있다. 사용자 창을 빼앗지 않으려면 --user-data-dir 로 띄운
 // 전용 인스턴스(예: 9333)를 쓴다 — SKILL.md "앱 위치와 실행" 경고 참조
+// CDP는 자체 인증이 없으므로 DNS 리바인딩 등을 막기 위해 루프백 IP를 직접 사용한다
+// (호스트명 "localhost" 대신 127.0.0.1로 고정, 다른 프로세스/호스트로 연결되지 않도록 함).
 const PORT = process.env.PBD_PORT || 9222
-const list = await (await fetch('http://localhost:' + PORT + '/json/list')).json()
+const list = await (await fetch('http://127.0.0.1:' + PORT + '/json/list')).json()
 const page = list.find(t => t.type === 'page')
 if (!page) { console.error('앱이 떠 있지 않다 (CDP 9222 응답 없음)'); process.exit(1) }
 
-const ws = new WebSocket(page.webSocketDebuggerUrl)
+const wsUrl = new URL(page.webSocketDebuggerUrl)
+wsUrl.hostname = '127.0.0.1' // 서버가 준 값도 루프백으로 강제해 동일 인증 경계를 유지한다
+const ws = new WebSocket(wsUrl.toString())
 let id = 0
 const pending = new Map()
 ws.onmessage = e => {
