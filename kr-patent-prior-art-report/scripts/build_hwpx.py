@@ -19,10 +19,22 @@
 config.json 스키마는 스킬의 references/config_example.json 참조.
 """
 import sys, json, re, zipfile
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as DET
+
+# defusedxml는 파싱만 감싸고 트리 빌드/직렬화 API(SubElement, register_namespace)는
+# 제공하지 않는다. 신뢰 XML(우리가 직접 구성한 트리)에 대해서만 필요하므로,
+# 이미 로드되어 있는 표준 라이브러리 모듈을 재사용한다(별도 import 없이).
+_ET = sys.modules["xml.etree.ElementTree"]
 
 HPNS = "http://www.hancom.co.kr/hwpml/2011/paragraph"
 HP = "{%s}" % HPNS
+
+
+def sub_element(parent, tag, attrib=None):
+    """ET.SubElement 대체: 신뢰 트리 빌드 전용(외부 XML 파싱과 무관)."""
+    el = parent.makeelement(tag, attrib or {})
+    parent.append(el)
+    return el
 
 
 def textof(el):
@@ -40,8 +52,8 @@ def set_para(p, segments):
         p.remove(run)
     strip_lineseg(p)
     for chid, txt in segments:
-        run = ET.SubElement(p, HP + "run", {"charPrIDRef": chid})
-        ET.SubElement(run, HP + "t").text = txt
+        run = sub_element(p, HP + "run", {"charPrIDRef": chid})
+        sub_element(run, HP + "t").text = txt
 
 
 def cell_styles(tc):
@@ -63,10 +75,10 @@ def set_cell(tc, paras):
     for op in olds:
         sub.remove(op)
     for segs in paras:
-        p = ET.SubElement(sub, HP + "p", attrib)
+        p = sub_element(sub, HP + "p", attrib)
         for chid, txt in segs:
-            run = ET.SubElement(p, HP + "run", {"charPrIDRef": chid})
-            ET.SubElement(run, HP + "t").text = txt
+            run = sub_element(p, HP + "run", {"charPrIDRef": chid})
+            sub_element(run, HP + "t").text = txt
 
 
 def last_index(root, predicate):
@@ -101,7 +113,7 @@ def drop_leading_example(root):
     controls = [k for k in list(src_run) if k.tag in (HP + "secPr", HP + "ctrl")]
     tgt_run = root[start].find(HP + "run")
     if tgt_run is None:
-        tgt_run = ET.SubElement(root[start], HP + "run", {"charPrIDRef": "7"})
+        tgt_run = sub_element(root[start], HP + "run", {"charPrIDRef": "7"})
     for off, c in enumerate(controls):
         src_run.remove(c)
         tgt_run.insert(off, c)
@@ -139,8 +151,8 @@ def main():
     z = zipfile.ZipFile(cfg["template"])
     raw = z.read("Contents/section0.xml").decode("utf-8")
     for pfx, uri in re.findall(r'xmlns:([\w\d]+)="([^"]+)"', raw[:2000]):
-        ET.register_namespace(pfx, uri)
-    root = ET.fromstring(raw)
+        _ET.register_namespace(pfx, uri)
+    root = DET.fromstring(raw)
 
     # ---- 검색어 / IPC (마지막 출현 = 두 번째 복제본) ----
     def is_kw(t):
@@ -216,7 +228,7 @@ def main():
                 r"\g<1>%d\g<2>" % tfh, hdr_xml)
 
     # ---- 직렬화: 원본 루트 시작 태그(전체 xmlns 선언) 복원 ----
-    body = ET.tostring(root, encoding="unicode")
+    body = DET.tostring(root, encoding="unicode")
     orig_start = raw[raw.index("<hs:sec"):raw.index(">", raw.index("<hs:sec")) + 1]
     new_start = body[body.index("<hs:sec"):body.index(">", body.index("<hs:sec")) + 1]
     body = body.replace(new_start, orig_start, 1)
@@ -236,7 +248,7 @@ def main():
     zout.close()
 
     # 재파싱 검증
-    ET.fromstring(zipfile.ZipFile(cfg["output"]).read("Contents/section0.xml").decode("utf-8"))
+    DET.fromstring(zipfile.ZipFile(cfg["output"]).read("Contents/section0.xml").decode("utf-8"))
     print("written + xml valid:", cfg["output"])
 
 
