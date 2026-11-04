@@ -1,0 +1,23 @@
+name: Validate skills
+
+on:
+  push:
+    paths: ['**/*.md', '**/*.py', 'requirements-dev.txt', 'evals/**', '.github/workflows/validate-skills.yml']
+  pull_request:
+    paths: ['**/*.md', '**/*.py', 'requirements-dev.txt', 'evals/**', '.github/workflows/validate-skills.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python scripts/validate_skills.py
+      - run: python -m unittest discover -s tests -v
+      - run: python -m json.tool evals/skill-cases.json > /dev/null

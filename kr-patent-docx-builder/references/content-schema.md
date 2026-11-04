@@ -1,232 +1,70 @@
 # Content 객체 스키마
 
-`build_kr_patent.js`에 전달하는 `content.js`(또는 객체)의 스키마.
+현재 `scripts/build_kr_patent.js` CLI가 읽는 JSON 또는 CommonJS 객체다. 문서 내용의 작성 규칙과 빌더의 필드 형식을 구별한다.
 
-## 전체 구조
+## 최소 예제: 청구항 문서
 
-```javascript
-module.exports = {
-  metadata: { ... },
-  invention_title: "...",
-  technical_field: "..." | [...],
-  background: [...],
-  problem_to_solve: [...],
-  solution: [...],
-  effects: [...],
-  drawings_brief: [...],
-  detailed_description: [...],
-  symbols: [...],
-  claims: [...],
-  abstract: "..." | [...]
-};
-```
-
-## 각 필드 상세
-
-### `metadata` (선택)
-
-```javascript
-metadata: {
-  file_label: "_법인명__관리번호_명세서초안08_담당자__YYYYMMDD_발명명",
-  invention_title: "빔 진단 시스템 및 빔 진단 방법",
-  representative_drawing: "도 1"
+```json
+{
+  "invention_title": "센서 제어 장치",
+  "claims": [
+    {"num": 1, "text": "센서 및 상기 센서의 출력에 기초하여 동작하는 제어기를 포함하는 센서 제어 장치."},
+    {"num": 2, "text": "제1항에 있어서, 상기 제어기는 상기 센서의 출력을 저장하는 센서 제어 장치."}
+  ]
 }
 ```
 
-- `file_label`: 출력 docx 파일명 (확장자 제외). 빈 값이면 `patent_spec`로 출력.
-- `invention_title`: metadata에 백업으로. 본문에는 `content.invention_title` 사용.
-- `representative_drawing`: 대표도 섹션에 들어갈 텍스트.
+헤더는 자동 생성된다. 청구항 본문에 `[청구항 1]` 등의 헤더를 포함하지 않는다. `claims`를 문자열 배열로 주면 1부터 자동 번호를 부여한다. 객체의 `text`가 문자열 배열이면 각 항목이 문단이 되며 자동 줄 분할은 생략된다.
 
-### `invention_title` (필수)
+## 필드
 
-```javascript
-invention_title: "빔 진단 시스템 및 빔 진단 방법"
+빌더는 존재하는 필드의 섹션을 출력한다. 전체 명세서에 필요한 섹션은 사용 목적에 맞게 준비한다. '필드 생략 가능'이 출원 서류에서의 생략 허용을 의미하지는 않는다.
+
+| 필드 | 형식 | 처리 |
+|---|---|---|
+| `metadata` | 객체 | `file_label`, 문서 속성용 `invention_title`, `representative_drawing` |
+| `invention_title` | 문자열 | 본문 발명의 명칭. metadata 제목으로 대체되지 않음 |
+| `technical_field` | 문자열 또는 문자열 배열 | 기술분야 |
+| `background` | 문자열 배열 | 배경기술 |
+| `problem_to_solve` | 문자열 배열 | 과제 및 발명의 내용 컨테이너 |
+| `solution` | 문자열 배열 | 해결수단 |
+| `effects` | 문자열 배열 | 효과 |
+| `drawings_brief` | `{fig, desc}` 배열 | `fig`는 '도 1', `desc`는 조사 뒤의 설명. 빌더가 은/는을 붙임 |
+| `detailed_description` | 문자열 또는 `{heading, level, paragraphs}`의 배열 | heading은 괄호 없는 제목, level 기본 3, paragraphs는 문자열 배열 권장 |
+| `symbols` | `{num, name}` 배열 | 없거나 빈 배열이면 절 생략 |
+| `claims` | 문자열 또는 `{num, text}`의 배열 | 청구항 헤더 자동 생성 |
+| `abstract` | 문자열 또는 문자열 배열 | 요약서·요약 |
+| `figures` | `{num, caption}` 배열 | 도면 헤더·캡션만. 이미지 파일 삽입 미지원 |
+| `layout` | 객체 | 아래 설정을 CLI에서 적용 |
+
+`drawings_brief` 예: `[{"fig":"도 1","desc":"센서 제어 장치를 나타내는 블록도이다."}]`.
+
+## Layout
+
+```json
+{
+  "layout": {
+    "body_align": "JUSTIFIED",
+    "l1_center": true,
+    "title_indent": true,
+    "drawings_indent": true,
+    "claim_tab": true,
+    "claim_linebreak": true,
+    "indent": {"body_first_line": 800, "claim_tab_pos": 1021},
+    "spacing": {"line": 480, "para_after": 120, "section_before": 320, "section_after": 200},
+    "margin": {"top": 1440, "right": 1080, "bottom": 1440, "left": 1080}
+  }
+}
 ```
 
-【발명의 명칭】 섹션 내용. 단일 문자열.
+여백·들여쓰기·문단 간격의 수치는 twip(DXA), 줄 간격 240은 1배다. 값은 예시이며 사용자 템플릿에 맞춘다. `body_align`은 `JUSTIFIED` 또는 `LEFT` 등을 받는다. `claim_tab=true`면 명칭·청구항에 실제 탭 문자가 들어가며 `claim_first_line`, `claim_hanging`은 탭 방식에서 쓰이지 않는다.
 
-### `technical_field` (필수)
+폰트·폰트 크기는 현재 `layout`으로 바꿀 수 없다. 맑은 고딕·본문 12pt가 스크립트 상수다. 코드 수정 없이 지원되지 않는 설정을 넣었다고 적용되었다고 보고하지 않는다.
 
-```javascript
-technical_field: "본 발명은 입자 가속기의 빔 진단 기술에 관한 것이다."
-```
+## 주의
 
-또는 여러 문장:
-
-```javascript
-technical_field: [
-  "본 발명은 ~에 관한 것으로,",
-  "보다 구체적으로는 ~에 관한 것이다."
-]
-```
-
-### `background` (필수)
-
-```javascript
-background: [
-  "<1단락 - 산업적 동향>",
-  "<2단락 - 기존 접근의 일반적 방식>",
-  "<3단락 - 기존 방식의 한계>",
-  "<4단락 - 해결과제로의 브릿지>"
-]
-```
-
-각 단락은 string. 4단락 구조 권장 (강제는 아님).
-
-### `problem_to_solve` (필수)
-
-```javascript
-problem_to_solve: [
-  "본 발명의 첫 번째 목적은, ~ 위한 것이다.",
-  "본 발명의 두 번째 목적은, ~ 위한 것이다.",
-  "본 발명의 세 번째 목적은, ~ 위한 것이다."
-]
-```
-
-목적형으로만. 수단 시사 금지. (`kr-patent-spec-drafting` 참고)
-
-### `solution` (필수)
-
-```javascript
-solution: [
-  "<독립항(청구항 1) 풀어쓰기 1단락>",
-  "<청구항 2 종속항 풀어쓰기>",
-  "<청구항 3 종속항 풀어쓰기>",
-  "..."
-]
-```
-
-청구항 N개를 모두 빠짐없이 반영. 독립항 "~한다.", 종속항 "~할 수 있다." 어미.
-
-### `effects` (필수)
-
-```javascript
-effects: [
-  "첫째, <효과 1 — 3단 인과 구조>",
-  "둘째, <효과 2>",
-  "...",
-  "<마무리 종합 1-2문장>"
-]
-```
-
-각 효과는 구조→메커니즘→이점 3단 인과 구조.
-
-### `drawings_brief` (필수)
-
-```javascript
-drawings_brief: [
-  { fig: "도 1", desc: "본 발명의 일 실시예에 따른 빔 진단 시스템을 보인 블록도이다." },
-  { fig: "도 2", desc: "본 발명의 일 실시예에 따른 스플리터의 구성을 보인 회로도이다." }
-]
-```
-
-각 항목은 `{ fig, desc }` 객체. desc 끝에는 마침표.
-
-### `detailed_description` (필수)
-
-```javascript
-detailed_description: [
-  "<실시예 도입부 표준 해석 규정 문구>",
-  "<도 1 실시예 단락 1>",
-  "<도 1 실시예 단락 2>",
-  "<도 2 실시예 단락 1>",
-  "..."
-]
-```
-
-각 도면별 6관점 (구조/기능/관계/메커니즘/효과/변형례) 적용.
-
-### `symbols` (필수)
-
-```javascript
-symbols: [
-  { num: "10", name: "슬릿 스캐너" },
-  { num: "11, 12", name: "슬릿 (x, x' 측정용 1쌍)" },
-  { num: "100", name: "빔 진단 시스템" },
-  { num: "110", name: "스플리터" },
-  { num: "120", name: "다중 게인 증폭부" },
-  { num: "121-124", name: "제1-4 게인 스테이지" },
-  { num: "S100", name: "빔 진단 방법" },
-  { num: "S110", name: "채널 분배 단계" }
-]
-```
-
-각 항목 `{ num, name }`. 시스템 부호와 방법 단계 부호(S 접두사) 모두 포함.
-
-### `claims` (필수)
-
-```javascript
-claims: [
-  "[청구항 1] ~를 포함하는, X 시스템.",
-  "[청구항 2] 제1항에 있어서, ~인 것을 특징으로 하는, X 시스템."
-]
-```
-
-각 청구항은 string. 사용자가 제공한 원문 그대로. 절대 변경 금지.
-
-청구항 번호 표기는 `[청구항 N]` 또는 `【청구항 N】` 중 일관성 유지.
-
-### `abstract` (필수)
-
-```javascript
-abstract: "본 발명은 ~에 관한 것이다. ~를 통해 ~한 효과를 얻을 수 있다."
-```
-
-또는 여러 단락:
-
-```javascript
-abstract: [
-  "본 발명은 ~에 관한 것이다.",
-  "본 발명에 따르면, ~한 효과를 얻을 수 있다."
-]
-```
-
-청구항 1 복붙이 아닌 의역. 효과 1-2문장 포함.
-
----
-
-## 빌드 시 자동 처리
-
-빌드 스크립트가 자동으로 추가하는 항목:
-
-- 【발명의 설명】 큰 컨테이너 헤더 (필요 시)
-- 섹션 헤더 (【발명의 명칭】, 【기술분야】 등)
-- 들여쓰기/줄간격/폰트 (나눔고딕)
-- 청구항 들여쓰기 (firstLine 677 DXA + hanging 280 DXA)
-- 페이지 크기 A4, 표준 여백
-
-## 분할 content 파일 사용
-
-명세서가 크면 부분 파일로 분할:
-
-```javascript
-// content.js
-module.exports = {
-  ...require("./content_part1.js"),  // metadata, invention_title, technical_field, background
-  ...require("./content_part2.js"),  // problem_to_solve, solution
-  ...require("./content_part3.js"),  // effects, drawings_brief
-  ...require("./content_part4.js"),  // detailed_description (가장 큼)
-  ...require("./content_part5.js")   // symbols, claims, abstract
-};
-```
-
-각 부분 파일은 자신이 채우는 필드만 export.
-
-```javascript
-// content_part1.js
-module.exports = {
-  metadata: { ... },
-  invention_title: "...",
-  technical_field: "...",
-  background: [...]
-};
-```
-
-## 자주 발생하는 schema 오류
-
-| 증상 | 원인 |
-|---|---|
-| `Cannot read property 'forEach' of undefined` | 배열 필드(예: `background`)를 string으로 잘못 제공 |
-| 청구항이 들여쓰기 없이 출력 | `claims` 항목이 `[청구항 N]` 접두사 누락 |
-| 부호 설명이 표 없이 한 줄로 | `symbols` 배열 항목이 `{ num, name }` 객체가 아닌 string |
-| 영문/숫자만 다른 폰트로 표시 | 빌드 스크립트는 자동 처리하지만, content.js 작성 시 raw HTML 같은 이상한 문자열 포함 시 발생 가능 |
+- 배열 필드에 문자열을 넣지 않는다.
+- `metadata.invention_title`은 본문 제목을 대신하지 않는다.
+- `figures[].path`는 현재 구현에서 읽지 않는다.
+- JSON을 우선 사용할 수 있다. 여러 파일을 조합해야 하면 신뢰할 수 있는 JS의 `module.exports`로 구성한다.
+- 명시적 `--output` 경로를 사용하고 결과의 실제 내용·문언을 대조한다.

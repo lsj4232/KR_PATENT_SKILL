@@ -1,22 +1,6 @@
 ---
 name: docx-to-hlz
-description: >-
-  한국 특허 명세서 워드(.docx)를 특허청 전자출원 편집기(통합명세서작성기 NKEditor /
-  신형 "지식재산처 전자문서 작성 S/W")가 여는 .hlz 파일로 변환한다. .hlz는 표준 ZIP =
-  KIPO application-body XML(1개) + patNNNNN 도면 이미지. 워드의 【식별항목】 섹션
-  (【발명의 명칭】【기술분야】【배경기술】【해결하고자 하는 과제】【과제의 해결 수단】【발명의 효과】
-  【도면의 간단한 설명】【발명을 실시하기 위한 구체적인 내용】【청구범위】【요약】【대표도】【도면】)을
-  KIPO XML 요소로 매핑하고, 청구항은 <claim-text> + <br/>로, 도면 이미지는 표시크기(EMU→mm)와
-  함께 <drawings>로 패키징. 편집기 호환을 위한 하드 규칙을 자동 적용 — (1) ZIP 엔트리 파일명을
-  CP949 인코딩 + UTF-8 플래그(0x800) 제거(안 하면 편집기가 압축해제 실패 "…SGM 찾을 수 없습니다"),
-  (2) img-format을 DTD 허용값 jpg|tif로 정규화(tiff→tif, png/bmp/gif→jpg 재인코딩),
-  (3) 청구항 태그의 작성자 메모 //…// 제거, (4) <p num> description 전관통 4자리 일련번호·abstract만
-  별도 접미사 a, (5) 대표도 <abstract-figure><figref num>. .HLT(HAN Lite 독자 바이너리)는 외부
-  생성 불가이므로 만들지 않는다 — .hlz를 편집기에서 열고 저장하면 편집기가 .HLT를 만든다.
-  "docx를 hlz로", "명세서 hlz 변환", "워드를 통합명세서작성기 형식으로", "hlz 만들어",
-  "특허청 편집기 파일로 변환", "명세서를 전자출원 편집기에 넣게", "docx2hlz" 같은 표현이 보이거나,
-  완성된 한국 특허 명세서 워드파일을 KIPO 편집기로 불러올 형태로 만들려는 맥락에서 사용.
-  (도면만 정리=도면정리, 청구항 트리=claim-tree-chart 스킬은 별개.)
+description: 한국 특허 명세서 DOCX를 전자출원 편집기에서 여는 HLZ로 변환한다. DOCX→HLZ 변환 요청에 사용하며 HLT 직접 생성은 지원하지 않는다.
 ---
 
 # docx-to-hlz — 워드 명세서 → 특허청 편집기(.hlz) 변환

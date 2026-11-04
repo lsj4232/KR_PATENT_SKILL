@@ -1,526 +1,106 @@
 # KR_PATENT_SKILL
 
-한국 변리사 실무를 위한 Claude 스킬(Skills) 모음. 발명자 미팅, 독립항 작성, 부호 체계 설계, 도면 부호 매핑, 명세서 본문 작성, 권리범위 보강(용어 정의·변형 실시예), 정합성 점검, 자동 정제 루프, docx 출력·후처리, 회고를 통한 스킬 자동 업데이트, **전체 워크플로우 자동 오케스트레이션**까지 — 한국 특허 명세서 작성 전 과정을 **24개 스킬**로 커버한다. 최종 산출물은 한국 특허청 양식의 **워드(.docx)** 이며, 원하면 그 docx를 특허청 전자출원 편집기가 읽는 **`.hlz`로 변환하는 선택 옵션**도 제공한다. 여기에 도면 작도용 데스크톱 에디터(**특허 블록도 에디터**, Electron)와 그 에디터를 자동 구동하는 스킬 2종이 동봉되어, 블록도·구성도 도면까지 한 레포에서 만든다.
+한국 특허 작성 실무를 돕는 24개 Agent Skills와 문서·도면 도구입니다. 발명자료 검토, 청구항·명세서 작성, 정합성 검토, DOCX 출력에 필요한 작업을 선택해 사용합니다.
 
-> **스킬(Skills)이란?** Claude가 호출할 수 있는 절차적 지식 패키지. 단순 프롬프트보다 한 단계 위로, 설명(Description) + 지시사항(Instructions) + 도구(Tools)의 3계층 구조. 매번 같은 작업을 새로 설명할 필요 없이 Claude에게 "앱"처럼 호출할 수 있다.
+![특허 블록도 에디터 예시](docs/examples/example-agent-system.png)
 
-> _English summary at the [bottom of this README](#-english-summary)._
+## 시작하기
 
-<p align="center">
-  <img src="./docs/examples/example-agent-system.png" width="820" alt="특허 블록도 에디터로 작도한 대화형 에이전트 시스템 구성도">
-</p>
-<p align="center">
-  <sub><b>이런 도면을 만든다.</b> 자연어 설명 한 단락을 <code>.pbd</code> 로 작성해 에디터에 주입하고 렌더한 결과 —
-  사용자 아이콘, 화면 컨테이너(300), 시스템 컨테이너(100), 중첩 패널, 물결 지시선 부호 태그,
-  점선 외부망 경계(200), 구름(210)과 원기둥 DB(220)까지 출원용 흑백 선화 그대로 나온다.
-  마우스 작업 0회, 3배 해상도 PNG.</sub>
-</p>
+1. 저장소를 받습니다: `git clone https://github.com/lsj4232/KR_PATENT_SKILL.git`
+2. 필요한 스킬 **폴더 전체**를 사용하는 에이전트의 스킬 경로에 설치합니다. `references/`, `scripts/`도 함께 필요합니다.
+3. 자료와 원하는 결과를 지정합니다. 전체 과정은 `kr-patent-full-workflow`, 한 작업은 해당 스킬을 사용합니다.
 
-## ✨ 특징
+Claude Code에서는 프로젝트의 `.claude/skills/<skill-name>/` 또는 개인 `~/.claude/skills/<skill-name>/`에 둘 수 있습니다. 실제 호출은 `/kr-patent-full-workflow`처럼 스킬 이름을 사용합니다. `/full`, `/recommend` 단축 명령은 이 저장소에서 등록하지 않습니다. [공식 설치·호출 안내](https://code.claude.com/docs/en/skills)
 
-- **조합 가능(Composable)** — 작고 집중된 24개 스킬. 전체 워크플로우 또는 일부만 선택적으로 사용.
-- **한국 특허 실무 특화** — 한국 특허청(KIPO) 가이드라인을 자동 반영한다:
-  - "종래" 표현 금지 — 종래기술을 자인하는 꼴이 될 수 있으므로 우회한다.
-  - "구성되는" 표현 금지 — 영문 명세서 번역 시 권리범위가 한정될 수 있으므로 "포함하는"으로 쓴다.
-  - 효과 3단 인과 구조(구조 → 메커니즘 → 이점).
-  - 청구항 한정 수치의 배경기술·도면 노출 방지.
-- **정형 템플릿 강제** — 독립항 작성(A~L 알고리즘), 본문 S1~S14 정형, 실시예 ITER 10 정형 등 실험으로 수렴된 재사용 템플릿을 자동 적용.
-- **제1항 분량 상한 645자** — 독립항 1(방법항) 본문을 공백 포함 645자 이하로 강제한다. 이 수치는 한국 대형 특허법인과 미국 대기업의 주요 국내 출원건을 대상으로 2024년부터 2026년까지의 출원건들에서 독립항 1의 공백 포함 글자수를 실측한 평균값이다. 초과하면 5순위 감축 사다리가 자동으로 걸린다. 상세는 [제1항 본문은 공백 포함 645자 이하](#-제1항-본문은-공백-포함-645자-이하-분량-상한).
-- **권리범위 보강 내장** — 자체 사전(Inventor as Lexicographer) 용어 정의 인라인 삽입 + 16카테고리 변형 실시예 부가로 권리 외연을 확장.
-- **실행 가능한 도구 포함** — docx 빌더(`build_kr_patent.js`), 서식 동기화·탐색창 부여(python-docx), 스킬 업데이터(`append_learning.py`)가 실제 코드로 동작.
-- **자동 정제 루프** — `kr-patent-ralph-loop`이 결함 0이 될 때까지 점검 → 수정 → 재점검을 자동 반복하여 출원 직전 명세서를 수렴시킨다.
-- **컴파운딩 루프 자동화** — 메타 스킬(`kr-patent-skill-updater`)로 회고 → 학습 항목 누적이 자동화된다. 사용할수록 똑똑해진다.
-- **기술분야 프로파일 분기** — 착수 시 G 계열(AI, SW, 제어, 시스템)과 H 계열(기계, 전기전자, 화학)을 판정하여 서로 다른 규범을 적용한다. H 계열은 유형 A(단일 실시형태)와 유형 B(복수 실시형태)까지 구분하고, 독립항 대응 구성을 확정형 어미로 쓰는 등 SW 계열과 정형 자체가 다르다.
-- **전체 워크플로우 한 줄로** — `/full` 또는 "처음부터 끝까지"라고 하면 11단계가 자동 순차 실행되고, 변리사는 주요 결정 단계의 체크포인트에서만 승인한다.
+Claude의 스킬 업로드 기능을 이용할 때는 각 스킬 폴더와 참고자료를 함께 압축합니다. 전체 워크플로우에는 해당 단계의 다른 스킬도 설치되어 있어야 합니다. 도면 에디터는 별도 앱이므로 아래 안내에 따라 준비합니다.
 
-## 📦 스킬 구성 (24개)
+예시 요청:
 
-| 단계 | 스킬 이름 | 역할 |
-|---|---|---|
-| 입력·진단 | [`kr-patent-inventor-meeting`](./kr-patent-inventor-meeting/) | 발명자 미팅 질문 생성 (7관점 프레임워크) |
-| 입력·진단 | [`kr-patent-stage-recommender`](./kr-patent-stage-recommender/) | 자료 진단 → 어느 Stage부터 시작할지 추천 (진단 게이트) |
-| 청구항·부호 | [`kr-patent-claim1-drafting`](./kr-patent-claim1-drafting/) | 독립항(청구항 1) 작성 (A~L 정형 알고리즘, 공백 포함 645자 상한) |
-| 청구항·부호 | [`kr-patent-symbol-design`](./kr-patent-symbol-design/) | 도면 부호 체계 설계 (계층적 넘버링) |
-| 청구항·부호 | [`kr-patent-drawing-mapping`](./kr-patent-drawing-mapping/) | 도면 이미지 OCR → 박스별 1:1 부호 매핑 표 |
-| 청구항·부호 | [`kr-patent-dependent-claim-drafting`](./kr-patent-dependent-claim-drafting/) | 종속항·시스템항·프로그램항·추가 독립항(청구항 2~N) 작성 |
-| 청구항·부호 | [`kr-patent-drawing-tagging`](./kr-patent-drawing-tagging/) | 도면 PNG에 부호 직접 삽입 (cv2 검출 + 충돌 회피 배치) |
-| 본문 작성 | [`kr-patent-spec-drafting`](./kr-patent-spec-drafting/) | 명세서 본문 작성 (S1~S14 정형 준수, S0 프로파일 분기로 G/H 계열 규범 선택) |
-| 본문 작성 | [`kr-patent-implementation-elaboration`](./kr-patent-implementation-elaboration/) | 추상 구성요소 3단 보강 (판단 기준 → 적용 방식 → 효과) |
-| 권리범위 보강 | [`kr-patent-definition-insertion`](./kr-patent-definition-insertion/) | 자체 사전 용어 정의 인라인 삽입 (4원칙) |
-| 권리범위 보강 | [`kr-patent-embodiment-addition`](./kr-patent-embodiment-addition/) | 16카테고리 변형 실시예 부가 (외연 확장) |
-| 검토·정합성 | [`kr-patent-consistency-check`](./kr-patent-consistency-check/) | 명세서·도면·청구항 정합성 점검 (Priority A/B/C, tracked changes) |
-| 검토·정합성 | [`kr-patent-detail-description-review`](./kr-patent-detail-description-review/) | S13 실시예 본문(ITER 10) 정형 정밀 검토 |
-| 검토·정합성 | [`kr-patent-ralph-loop`](./kr-patent-ralph-loop/) | 결함 0까지 점검↔수정 자동 반복 정제 루프 |
-| 선행조사 | [`kr-patent-search-query`](./kr-patent-search-query/) | 소분류별 선행기술 검색식 정형 생성 |
-| 선행조사 | [`kr-patent-prior-art-report`](./kr-patent-prior-art-report/) | 우선심사용 선행기술 조사 패키지(대비표 + hwpx) 생성 |
-| 도면 작도 | [`patent-block-diagram`](./patent-block-diagram/) | 자연어 설명 → `.pbd` 작성 → 에디터 주입 렌더 → 출원용 PNG |
-| 도면 작도 | [`patent-block-diagram-refine`](./patent-block-diagram-refine/) | 기존 `.pbd` 도면 세트 수정·정합 보정 워크플로우 |
-| docx 인프라 | [`kr-patent-docx-builder`](./kr-patent-docx-builder/) | 한국 특허 양식 docx 빌드 |
-| docx 인프라 | [`kr-patent-format-unify`](./kr-patent-format-unify/) | 신설 단락 서식 동기화 (pPr·rPr 복사) |
-| docx 인프라 | [`kr-patent-navigation-pane`](./kr-patent-navigation-pane/) | Word 탐색창 outline level 자동 부여 |
-| 출력 옵션 | [`docx-to-hlz`](./docx-to-hlz/) | (선택) 완성 docx → 특허청 전자출원 편집기 `.hlz` 변환 |
-| 오케스트레이션 | [`kr-patent-full-workflow`](./kr-patent-full-workflow/) | **`/full` 전체 워크플로우 오케스트레이터 (11단계)** ★ |
-| 메타 | [`kr-patent-skill-updater`](./kr-patent-skill-updater/) | 회고 → 스킬 자동 업데이트 (컴파운딩 루프) |
+- “이 IDS로 청구항과 명세서 초안을 작성해줘. 불확실한 내용은 따로 표시해줘.”
+- “이 문서는 검토만 해줘. 청구항·본문·도면의 불일치를 위치와 함께 알려줘.”
+- “내용은 확정했어. 이 JSON을 DOCX로 만들어줘.”
 
-각 스킬의 SKILL.md 끝에는 `### 누적 학습 항목` 섹션이 있어, `kr-patent-skill-updater`가 회고 결과를 이 섹션에 누적한다.
+## 스킬 선택
 
-## 🖥 동봉 프로그램 — 특허 블록도 에디터
+| 작업 | 스킬 |
+|---|---|
+| 미팅 질문 | [inventor-meeting](kr-patent-inventor-meeting/SKILL.md) |
+| 현재 자료 진단·다음 작업 | [stage-recommender](kr-patent-stage-recommender/SKILL.md) |
+| 독립항 | [claim1-drafting](kr-patent-claim1-drafting/SKILL.md) |
+| 종속항·추가 독립항 | [dependent-claim-drafting](kr-patent-dependent-claim-drafting/SKILL.md) |
+| 부호 체계 | [symbol-design](kr-patent-symbol-design/SKILL.md) |
+| 도면 객체·부호 매핑 | [drawing-mapping](kr-patent-drawing-mapping/SKILL.md) |
+| PNG 부호 삽입 | [drawing-tagging](kr-patent-drawing-tagging/SKILL.md) |
+| 명세서 본문 | [spec-drafting](kr-patent-spec-drafting/SKILL.md) |
+| 용어 정의 | [definition-insertion](kr-patent-definition-insertion/SKILL.md) |
+| 구현 설명 보완 | [implementation-elaboration](kr-patent-implementation-elaboration/SKILL.md) |
+| 변형 실시예 | [embodiment-addition](kr-patent-embodiment-addition/SKILL.md) |
+| 전체 정합성 점검 | [consistency-check](kr-patent-consistency-check/SKILL.md) |
+| 실시예 본문 집중 검토 | [detail-description-review](kr-patent-detail-description-review/SKILL.md) |
+| 제한된 반복 정제 | [ralph-loop](kr-patent-ralph-loop/SKILL.md) |
+| 선행기술 검색식 | [search-query](kr-patent-search-query/SKILL.md) |
+| 선행기술 보고서 | [prior-art-report](kr-patent-prior-art-report/SKILL.md) |
+| 새 블록도·흐름도 | [patent-block-diagram](patent-block-diagram/SKILL.md) |
+| 기존 PBD 수정 | [patent-block-diagram-refine](patent-block-diagram-refine/SKILL.md) |
+| DOCX 생성 | [docx-builder](kr-patent-docx-builder/SKILL.md) |
+| 기존 DOCX 서식 | [format-unify](kr-patent-format-unify/SKILL.md) |
+| Word 탐색창 | [navigation-pane](kr-patent-navigation-pane/SKILL.md) |
+| DOCX → HLZ | [docx-to-hlz](docx-to-hlz/SKILL.md) |
+| 여러 단계 이어서 수행 | [full-workflow](kr-patent-full-workflow/SKILL.md) |
+| 요청에 따른 스킬 개선 | [skill-updater](kr-patent-skill-updater/SKILL.md) |
 
-`patent-block-diagram-app/` 은 특허 도면용 블록도를 그리는 Electron 데스크톱 앱(v0.5.1)이다.
-스킬 `patent-block-diagram` 이 이 앱을 CDP로 구동해 좌표·화살표·부호 태그를 JSON(`.pbd`)으로
-주입하고 PNG로 내보내므로, 마우스 작업 없이 도면이 완성된다. 산출된 `.pbd` 는 더블클릭으로
-열려 사람이 이어서 GUI 편집할 수 있다.
+전체 흐름은 자료 확인 → 청구항 → 도면·부호 → 본문 → 필요한 보완 → 검토·수정 → 출력입니다. 기존 산출물을 이어 쓰고 불필요한 단계는 생략합니다. 645자·600문장 등 과거 고정 분량은 기본 요구에서 제외했습니다. 특정 문체와 ITER 10 템플릿은 요청한 경우에 선택합니다.
 
-- 도형: 사각형·둥근사각형·마름모·원기둥(DB)·구름(망)·사용자, 특허 도면식 오프셋 음영
-- 화살표: 직선/직각, 굵기·화살촉 동시 조절, 꺾임 위치 드래그(비율 저장)
-- 채움: 흰칠 → 45° 빗금(`hatch: true`) → 점무늬(`hatch: "dot"`) 순환
-- 이미지 삽입·투명색 지정, 스마트 가이드(정렬·등간격), 도면부호 물결 지시선 태그
-- 수식(MathJax, `math: true`), 3배 고해상도 PNG 내보내기, `.pbd` 파일 연결
+## 도구와 의존성
 
-위 예시 도면([원본](./docs/examples/example-agent-system.png))이 이 앱과 스킬로 만든 산출물이다.
+문서 지침만 사용하는 작업에는 아래 실행 환경이 모두 필요하지 않습니다.
+
+| 기능 | 실행 환경 |
+|---|---|
+| DOCX 빌더 | Node.js, `kr-patent-docx-builder/package-lock.json`에 고정된 의존성 (`npm ci`) |
+| 서식·탐색창 후처리 | Python, `python-docx` |
+| PNG 부호 태깅 | Python, `opencv-python`, `numpy`, `Pillow` 및 사용 폰트 |
+| DOCX → HLZ | Python, `python-docx`, `Pillow` |
+| HWPX 보고서 | Python; 페이지 측정은 Windows·한글 COM·`pywin32` 필요 |
+| 스킬 업데이터 | Python 표준 라이브러리 |
+| 블록도 에디터 | Node.js·Electron, 앱의 잠금 파일에 따른 설치 |
+
+DOCX 예시:
+
+```bash
+cd kr-patent-docx-builder
+npm ci
+node scripts/build_kr_patent.js --content /path/to/content.json --output /path/to/draft.docx
+```
+
+[입력 스키마](kr-patent-docx-builder/references/content-schema.md)를 사용합니다. 현재 빌더의 `figures`는 도면 제목·캡션만 출력하며 이미지 파일을 삽입하지 않습니다. 기존 Word 편집을 보존해야 하는 경우 재빌드하지 말고 해당 문서를 편집합니다.
+
+## 특허 블록도 에디터
+
+[patent-block-diagram-app](patent-block-diagram-app/README.md)은 PBD 원본을 편집하고 PNG로 내보내는 Electron 앱입니다. 실행·렌더링 상세는 앱과 도면 스킬 안내를 따릅니다.
 
 ```bash
 cd patent-block-diagram-app
-npm install
-npm start                 # 앱 실행
-npm run dist:win          # Windows 설치본(NSIS) 빌드
+npm ci
+npm start
 ```
 
-에이전트가 렌더할 때는 반드시 사용자 창과 분리한다(단일 인스턴스 락이 userData 폴더 단위라,
-`--user-data-dir` 없이 띄우면 사용자가 편집 중인 창을 빼앗는다):
+에이전트용 인스턴스는 사용자 작업 창과 별도의 `--user-data-dir`를 사용합니다. CDP 연결·렌더링이 필요한 경우에만 실행합니다.
+
+## 검증·유지보수
 
 ```bash
-cd patent-block-diagram-app &&   ./node_modules/.bin/electron.cmd . --remote-debugging-port=9222     --user-data-dir="$TMP/pbd-agent" > /dev/null 2>&1 &
-node ../patent-block-diagram/scripts/render_pbd.mjs 도면.pbd 도면.png 3
+python -m pip install -r requirements-dev.txt
+python scripts/validate_skills.py
+python -m unittest discover -s tests -v
 ```
 
-## 🚀 설치 방법
+[기여 안내](CONTRIBUTING.md), [정리 기준과 공식 참고자료](docs/skill-maintenance.md), [행동 평가 사례](evals/skill-cases.json)를 참고하세요. 구조 검사와 스크립트 테스트는 모델의 실무 판단 성능 검증과 구분합니다.
 
-### 옵션 1: Claude.ai (Skills 기능 사용)
+이 도구는 업무 보조용입니다. 개별 출원의 법적 요건은 적용 시점의 공식 기준과 자료로 검토해야 하며, 점검 통과가 등록·출원 적합성을 보증하지 않습니다. 비공개 발명자료를 공개 예시나 스킬에 포함하지 마세요.
 
-Claude.ai의 Skills 기능에 각 스킬을 업로드한다. (Skills 기능은 일부 환경에서만 사용 가능 — Anthropic 문서 확인.)
+## English summary
 
-각 스킬 폴더(예: `kr-patent-inventor-meeting/`)를 zip으로 압축하여 업로드한다.
+24 composable skills for Korean patent drafting, review, document output, and diagrams. Install only the skills needed for your task. Instructions distinguish technical evidence from optional writing conventions; references load on demand. See each skill for inputs, tooling, and limits.
 
-### 옵션 2: Claude Code / API
-
-작업 디렉토리 또는 프로젝트의 스킬 경로에 클론한다.
-
-```bash
-git clone https://github.com/lsj4232/KR_PATENT_SKILL.git
-cd KR_PATENT_SKILL
-```
-
-Claude Code 또는 API에서 스킬 경로를 인식하도록 설정한다. 자세한 사용법은 [Anthropic Skills 문서](https://docs.claude.com) 참조.
-
-### 옵션 3: 수동 — Claude에게 스킬 내용을 직접 보여주기
-
-각 SKILL.md 파일의 내용을 Claude 대화 초반에 시스템 메시지처럼 붙여 넣어도 동작한다.
-
-## 📋 의존성
-
-| 스킬 | 의존성 |
-|---|---|
-| `kr-patent-docx-builder` | Node.js ≥ 18, `docx` npm 패키지 (`^8.5.0`) |
-| `kr-patent-format-unify`, `kr-patent-navigation-pane` | Python ≥ 3.8, `python-docx` |
-| `kr-patent-skill-updater` | Python ≥ 3.8 (표준 라이브러리만 사용) |
-| `docx-to-hlz` (선택) | Python ≥ 3.8, `python-docx`, `Pillow` |
-| 나머지 11개 스킬 | 추가 의존성 없음 (텍스트 기반) |
-
-## 🎯 빠른 시작 (사용 예)
-
-### 시나리오 A: 새 발명을 처음부터 명세서까지
-
-```
-1. 발명자가 IDS(기술내용설명서) 제출
-   ↓
-2. [kr-patent-inventor-meeting]  → 발명자 미팅 질문 생성
-   ↓ (미팅 후 발명 자료 확정)
-3. [kr-patent-claim1-drafting]   → 독립항(청구항 1) 초안 작성
-   ↓
-4. [kr-patent-symbol-design]     → 부호 체계 확정
-   ↓ (도면이 있으면 [kr-patent-drawing-mapping]으로 박스별 부호 매핑)
-5. [kr-patent-spec-drafting]     → 명세서 본문 작성 (1차 초안)
-   ↓
-6. [kr-patent-definition-insertion] → 자체 사전 용어 정의 삽입
-   [kr-patent-embodiment-addition]  → 변형 실시예 부가 (권리범위 보강)
-   ↓
-7. [kr-patent-consistency-check] → 정합성 점검 (Priority A/B/C + 수정안)
-   [kr-patent-ralph-loop]        → 결함 0까지 자동 반복 정제 (선택)
-   ↓
-8. [kr-patent-docx-builder]      → 한국 특허 양식 docx 출력
-   [kr-patent-format-unify] / [kr-patent-navigation-pane] → docx 후처리
-   ↓
-9. [kr-patent-skill-updater]     → 회고 → 다른 스킬들에 학습 항목 누적
-```
-
-### 대화 예시
-
-#### ✨ 가장 빠른 방법: `/full` (전체 자동, 11단계)
-
-```
-User: "/full" 또는 "처음부터 끝까지 도와줘"
-→ Claude가 kr-patent-full-workflow 사용
-  ↓
-  Stage 0: 현재 자료 자동 점검 → 어느 단계부터 시작할지 판단
-           (kr-patent-stage-recommender로 진단 가능)
-  ↓
-  11단계 순차 실행 (★ 주요 결정 단계에서만 사용자 OK 받음):
-    Stage 1)   발명자 미팅 질문 (선택)
-    Stage 2)   청구항 확정 확인
-    Stage 3)   부호 체계 설계 ★
-    Stage 4)   스토리텔링 설계 ★
-    Stage 5)   명세서 본문 작성 (1차)
-    Stage 6)   권리범위 보강 — 용어 정의 삽입 ★
-    Stage 6.5) 권리범위 보강 — 구성요소·파이프라인 구체화 ★
-    Stage 7)   권리범위 보강 — 변형 실시예 추가 ★
-    Stage 8)   정합성 점검 ★ (어떤 수정 적용할지 결정)
-    Stage 9)   수정 반영
-    Stage 10)  docx 출력
-    Stage 11)  회고 (선택)
-```
-
-#### "어디부터 시작하지?" — 진단부터
-
-```
-User: "이 명세서 어디까지 됐어? 다음 단계 추천해줘" 또는 "/recommend"
-→ Claude가 kr-patent-stage-recommender 사용
-  → 자료 현황표 + 추천 시작 Stage + 근거 + 권장 명령(/full <범위>) 1페이지 진단 보고서
-```
-
-#### 개별 호출 (특정 작업만)
-
-```
-User: "이 발명자 IDS 검토하고 미팅 질문 만들어줘"
-→ kr-patent-inventor-meeting
-
-User: "이 논문으로 독립항 초안 작성해줘"
-→ kr-patent-claim1-drafting
-
-User: "청구항 확정됐어. 부호 체계 설계해줘"
-→ kr-patent-symbol-design   (도면 이미지가 있으면 kr-patent-drawing-mapping)
-
-User: "이 청구항과 도면으로 명세서 본문 작성해줘"
-→ kr-patent-spec-drafting
-
-User: "1차 본문 나왔어. 권리범위 보강해줘"
-→ kr-patent-definition-insertion → kr-patent-embodiment-addition
-
-User: "명세서 점검해줘"
-→ kr-patent-consistency-check   (흠 없을 때까지 자동이면 kr-patent-ralph-loop)
-
-User: "최종 docx로 만들어줘"
-→ kr-patent-docx-builder   (서식/탐색창 후처리: kr-patent-format-unify, kr-patent-navigation-pane)
-
-User: "이번 작업 회고하고 스킬에 반영해줘"
-→ kr-patent-skill-updater
-```
-
-### docx 빌더 직접 사용
-
-```bash
-# 의존성 설치
-npm install docx
-
-# content.js 작성 (스키마는 kr-patent-docx-builder/references/content-schema.md 참조)
-cp kr-patent-docx-builder/references/example-content.js ./content.js
-# 각 필드 채우기
-
-# 빌드
-node kr-patent-docx-builder/scripts/build_kr_patent.js \
-    --content ./content.js \
-    --output ./my_patent_spec.docx
-```
-
-## 🔄 컴파운딩 루프 — 핵심 차별점
-
-이 패키지의 가장 중요한 설계 결정은 "사용할수록 스킬이 똑똑해지도록 만든 것"이다.
-
-각 SKILL.md 끝에는 `### 누적 학습 항목` 섹션이 있다. `kr-patent-skill-updater` 스킬을 통해:
-
-1. 작업 종료 후 "회고해줘"라고 요청한다.
-2. Claude가 지난 대화에서 발견된 패턴/실수/개선점을 추출한다.
-3. 사용자 승인 후 `append_learning.py`로 해당 SKILL.md를 자동 업데이트한다 (백업 포함).
-
-```bash
-# 학습 항목 추가 (여러 개 동시 가능, 추가 전 .bak.YYYYMMDD-HHMMSS 백업 생성)
-python3 kr-patent-skill-updater/scripts/append_learning.py \
-    --skill-path kr-patent-spec-drafting/SKILL.md \
-    --item "회로 발명에서 V_REF 정전위 조건은 시스템 효과로도 명시해야 함" \
-    --item "종속항 효과 누락 빈번 — 청구항군마다 효과 1문장 체크"
-
-# 현재 누적된 학습 항목 조회
-python3 kr-patent-skill-updater/scripts/append_learning.py \
-    --skill-path kr-patent-spec-drafting/SKILL.md --list
-```
-
-5번, 50번 사용할수록 변리사가 자주 빠뜨리는 함정/체크포인트가 누적되어, 새 명세서 작성 시 자동으로 회피한다.
-
-## 📐 한국 특허 가이드라인 요약
-
-본 스킬들이 자동으로 적용하는 규칙들. 세부 카탈로그는 [`kr-patent-spec-drafting/references/ko-patent-style-rules.md`](./kr-patent-spec-drafting/references/ko-patent-style-rules.md) 참조.
-
-### 금지 표현
-- "종래", "종래기술" → "기존", "이미", "통상적으로"로 우회
-- "구성되는" → "이루어지는" 또는 "포함하는"
-- 청구항 한정 수치(예: "100 dB", "10 mV")를 배경기술에 그대로 노출 금지
-- 도면 박스 라벨에 청구항 한정 수치 노출 금지
-- 해결과제에 수단 시사("~을 이용하여") 금지 — 목적형으로만 기재
-- 본문에서 "청구항 X" / "단계 SXXX" 직접 언급 금지 (내부 작성 로직 노출 방지)
-
-### 기술분야 프로파일 (S0 분기)
-
-| 프로파일 | 대상 | 규범 |
-|---|---|---|
-| **G** | AI/ML, 데이터 처리 SW, 제어, 시스템/네트워크 | [`references/sw-ai-spec-supplement.md`](./kr-patent-spec-drafting/references/sw-ai-spec-supplement.md) — 볼륨 하한 V1~V7, 실시예 4계층 L1~L4, 챕터 목차 골격, G1~G4 유형별 필수 서술, 승인 게이트 |
-| **H** | 기계, 전기전자, 화학 | [`references/hw-mechanical-spec-rules.md`](./kr-patent-spec-drafting/references/hw-mechanical-spec-rules.md) — 유형 A/B 실시형태 판별, 독립항 확정형 어미, 배경기술 한계 중심 서술, 도면 순차 참조와 섹션 마무리 효과 문단, 외래어 한정 영문 병기, 마감 문단 정본 |
-| 혼합 | 장치항 + 제어 방법항 병존 | H 기본, 제어 방법항 부분만 G 정형 병용 |
-
-H 계열은 컴퓨터 판독 매체 정형 문구를 쓰지 않고, 도면 설명도 "도 1은 ~의 사시도이다" 형태로 도면 종류를 그대로 기재한다.
-
-### 조건부 병용 규범 (2026.09 추가)
-
-| 조건 | 규범 |
-|---|---|
-| 프로그램 청구항 + 해외출원(미국, PCT) 가능성 | [`references/overseas-crm-support.md`](./kr-patent-spec-drafting/references/overseas-crm-support.md). 비일시적 컴퓨터 판독가능 저장 매체 지지문언을 S4와 S14 0파트 두 곳에 배치, 맺음말 매체 일반론 2층 정의(상위는 열고 하위만 닫음), NVMe 금지, 국가법 대응 목적 비노출. **최초 명세서에만 넣을 수 있고 이후 보정 불가** |
-| 도면 미확보 또는 신규 도면 세트 설계 | [`references/drawing-set-design.md`](./kr-patent-spec-drafting/references/drawing-set-design.md). 커버리지 우선(장수보다 청구항 축 뒷받침 우선), 세트 골격과 축별 예산, 한 장 한 정보 변환, 흐름도 박스에 청구항 원문 이관, 부호 승계와 위상 분리, 도면 작업지시서 7구성. 이 건은 S11 서두보다 S12를 먼저 수행 |
-
-점검은 `kr-patent-consistency-check`의 M섹션(저장매체 지지문언 9항목), N섹션(도면 세트 커버리지 12항목)에서 수행한다.
-
- 
-
-#### ★ 제1항 본문은 공백 포함 645자 이하 (분량 상한)
-
-제1항(방법항과 물건항 모두) 본문의 분량 상한을 **공백 포함 645자**로 둔다.
-
-**이 수치를 상한으로 둔 이유는, 한국 대형 특허법인과 미국 대기업의 주요 국내 출원건을
-대상으로 2024년부터 2026년까지의 출원건들을 모아 독립항 1의 공백 포함 글자수를 실측한
-평균값이기 때문이다.** 실무에서 통용되는 제1항의 분량이 그 부근에 수렴한다는 뜻이므로,
-평균을 넘어선 제1항은 그만큼 한정이 많다는 신호이고 그 한정의 대부분은 종속항으로
-내려가야 할 것들이다.
-
-제1항이 이 분량을 넘으면 세 가지 문제가 생긴다.
-
-1. 구성요소가 과다하여 회피 설계의 여지를 스스로 열어 준다.
-2. 한 단계에 두 개 이상의 처리가 뭉쳐 입력에서 처리를 거쳐 출력으로 이어지는 환원 구조가 깨진다.
-3. 번역과 해외출원 단계에서 문장 분할이 강제되어 문언이 흔들린다.
-
-계수는 `【청구항 1】` 헤더를 제외한 본문 전체를 대상으로 하고, 전제부는 포함하며, 조판상의
-줄바꿈과 들여쓰기 탭은 제외한다. 초과 시에는 5순위 감축 사다리(중간 산출물 명칭화, 반복
-열거 묶음, 영문 병기 본문 이관, 부수 한정 종속항 이관, 핵심 한정 삭감)를 위에서부터 적용하고,
-4순위까지로 해소되지 않으면 5순위로 넘어가지 않고 사용자에게 보고한다.
-
-세부 규범은 [`kr-patent-claim1-drafting`](./kr-patent-claim1-drafting/SKILL.md) K-3
-(분량 상한).
-
-### 도면 작성 팁
-
-#### 1. ★ 광의 도면 먼저, 구체화 도면 나중 (해외출원 대비 2층 구조)
-
-**한국에서는 문제되지 않지만 유럽(EPO)과 중국(CNIPA)에서는 도면을 근거로 청구항을
-한정해석하거나, 도면에 의해 뒷받침되지 않는다고 지적하는 사례가 나온다.** 한 건에
-흐름도를 한 장만 두고 그 한 장을 구체적으로 그리면, 그 구체 수준이 곧 청구항의
-해석 범위로 읽힐 위험이 있다.
-
-정석은 **같은 흐름을 두 층으로 나누어 그리는 것**이다.
-
-| 층 | 내용 | 대응 |
-|---|---|---|
-| **1층 (광의)** | 각 단계 또는 각 단계의 워딩을 넓힌(간략화한) 전문 흐름도 **1장** | 독립항. 청구항 문언 그대로가 가장 넓은 워딩이므로 이 층이 곧 원문 이관 층이 된다 |
-| **2층 (구체)** | 1층의 단계를 하위 단계로 분해하거나 워딩을 구체화한 흐름도 | 종속항, 실시예. **구현 예시가 여러 개면 예시마다 한 장씩 복수로 둔다** |
-
-- 1층이 없으면 구체 도면 하나가 발명의 전부로 읽혀 **한정해석**의 근거가 된다.
-- 2층이 없으면 구체 실시 형태가 도면 뒷받침을 잃어 **뒷받침 흠결** 지적을 받는다.
-- 2층을 예시별로 복수 장으로 나누면, 예시 하나가 다른 예시의 필수 구성처럼 읽히는
-  것을 막는다. 한 장에 여러 예시를 겹쳐 그리지 않는다.
-- 1층과 2층의 단계 부호는 승계 관계가 드러나도록 부여한다(예: 1층 S310을 2층에서
-  S311, S312, S313으로 분해).
-
-#### 2. 그 밖의 도면 실무 팁
-
-- **커버리지가 장수에 우선한다.** 장수를 이유로 청구항 축을 생략하거나 병합하지 않는다.
-  각 도면에 대응 청구항을 적고, 역으로 **도면 뒷받침이 없는 청구항 목록**을 산출한다.
-- **한 장 = 한 정보 변환.** 직전 장의 산출물 부호를 다음 장의 입력으로 승계시킨다.
-  이 구조가 본문 브릿지 문장과 의미 비약 방지의 근거가 된다.
-- **데이터에서 데이터로 직결하지 않는다.** 변환을 수행하는 주체 또는 처리 박스를
-  경유시켜야 본문에서 "무엇이 그 변환을 수행하는가"를 쓸 수 있다.
-- **전문 흐름도에 종속항 한정을 실선 박스로 섞지 않는다.** 섞으면 종속항 한정이
-  독립항의 필수 구성처럼 읽힌다. 세부 흐름도, 점선 부가, 개념 전개 도면 중 하나로 뺀다.
-- **도면 텍스트는 청구항 확정 어휘로 통일한다.** 발명자료의 모듈명(PIM, NPU 등)이
-  도면에 남으면 본문의 청구항 용어 일관성이 도면 단계에서 깨진다.
-- **부호는 박스 밖에 지시선으로 붙인다.** 박스 안 괄호 표기는 쓰지 않으며, 단계 부호
-  (S110 등)도 외부 리더선으로 처리한다. 단계 부호는 부호의 설명에 기재하지 않는다.
-- **표 형태의 수치 자료는 도면으로 승격하지 않는다.** 분포, 임계값, 성능 예시는 본문
-  전용이다. 다만 구조 자체가 청구된 종속항은 구조도 1장으로 그린다.
-
-세부 규격(세트 골격과 축별 예산, 흐름도 박스 문언 조정 4가지, 선 및 도형의 의미론,
-응용 장면 배치, 도면 작업지시서 7구성)은
-[`references/drawing-set-design.md`](./kr-patent-spec-drafting/references/drawing-set-design.md).
-
-### 권장 표현
-- 독립항 풀어쓰기: "~한다." (단정) / 종속항: "~할 수 있다." (선택적)
-- 효과 3단 인과 구조: 구조 → 메커니즘 → 이점
-- 동의어 방어망: "X는 Y로도 명명될 수 있다." (3개 이상)
-- 자체 사전: "여기에서, X라 함은 ~를 의미할 수 있다."
-- 부정 한정: "다만, 이에 한정되지 않는다."
-
-### 정합성 점검 (출원 전 마지막 게이트)
-`kr-patent-consistency-check`가 명세서·도면·청구항 3자 정합성과 S1~S14 정형 준수를 점검하고, 위반을 **Priority A/B/C**로 분류하여 6항목 정형(번호/위치/근거규칙/현황/수정안/부가설명)으로 수정안을 제시한다. 사용자 승인 후 tracked changes로 `.docx`에 반영한다. `kr-patent-ralph-loop`은 이 점검을 결함 0이 될 때까지 자동 반복한다(기본 종료조건 0 Priority A, 최대 5회).
-
-### 명세서 양식 (docx)
-- 폰트: 나눔고딕
-- 본문: 11pt, 1.5배 줄간격(line 360)
-- 청구항: firstLine 677 DXA + hanging 280 DXA
-- 페이지: A4, 표준 여백
-- 섹션 헤더: 【발명의 명칭】, 【기술분야】, …
-
-## 📤 (선택) 특허청 편집기 파일 `.hlz` 변환 — `docx-to-hlz`
-
-이 패키지의 **기본 산출물은 한국 특허청 양식의 워드 파일(`.docx`)** 이다. 대부분의 사무소는 그
-docx를 그대로 검토하고 회람하며, 전자출원 단계에서만 편집기로 옮긴다. 그 마지막 한 걸음을 자동화하고
-싶을 때만 쓰는 **선택 옵션**이 [`docx-to-hlz`](./docx-to-hlz/) 이다. 쓰지 않아도 전체 워크플로우는
-그대로 완결된다.
-
-```
-[kr-patent-docx-builder] → 명세서.docx   ← 기본 산출물 (여기서 끝나도 됨)
-                                │
-                                └─(선택)─▶ [docx-to-hlz] → 명세서.hlz → 편집기에서 열기
-```
-
-### 무엇을 만드나
-
-`.hlz` 는 특허청 전자출원 편집기(통합명세서작성기 **NKEditor**, 신형 "지식재산처 전자문서 작성 S/W")가
-여는 파일로, 실체는 **표준 ZIP = KIPO `application-body` XML 1개 + `patNNNNN` 도면 이미지** 이다.
-워드의 【식별항목】 태그(【발명의 명칭】【기술분야】【배경기술】【해결하고자 하는 과제】【과제의 해결 수단】
-【발명의 효과】【도면의 간단한 설명】【발명을 실시하기 위한 구체적인 내용】【청구범위】【요약】【대표도】
-【도면】)를 KIPO XML 요소로 매핑한다.
-
-```bash
-pip install python-docx Pillow
-
-python docx-to-hlz/scripts/docx2hlz.py "명세서.docx"            # → 같은 폴더에 명세서.hlz
-python docx-to-hlz/scripts/docx2hlz.py "명세서.docx" -o out.hlz
-```
-
-변환 뒤 편집기에서 **[파일 > 열기]로 `.hlz` 선택**(또는 창에 드래그&드롭). 편집기 GUI 조작은
-자동화 대상이 아니므로 여는 것은 사람이 한다.
-
-### 스크립트가 자동으로 지키는 편집기 호환 규칙
-
-| # | 규칙 | 어기면 |
-|---|---|---|
-| 1 | ZIP 엔트리 파일명 **CP949 + UTF-8 플래그(0x800) 제거** | 구 MFC 편집기가 압축해제 자체를 실패 → "…SGM 을(를) 찾을 수 없습니다" |
-| 2 | 내부 XML basename == `.hlz` basename | 편집기가 문서 파일을 못 찾음 |
-| 3 | `img-format` 은 DTD 허용값 `jpg`/`tif` 만 (tiff는 tif로, png와 bmp와 gif는 jpg로 재인코딩) | 로딩 실패 |
-| 4 | 청구항은 `<claim-text>` 한 덩어리 + `<br/>`, 작성자 메모 `//…//` 제거 | 청구항 깨짐, 메모 노출 |
-| 5 | `<p num>` 은 description 전관통 4자리 일련번호(abstract만 접미사 `a`) | 단락번호 어긋남 |
-| 6 | 도면 표시크기 `he`/`wi` 는 mm, **최대 165 × 222mm** | 검증기 E-218 |
-
-1번이 가장 자주 틀리는 지점이다. 파이썬 `zipfile` 기본값은 한글 파일명에 UTF-8 플래그를 세우는데,
-구형 편집기는 그 엔트리를 찾지 못한다(`ZipInfo._encodeFilenameFlags` 오버라이드로 해결).
-
-### 변환 후 권장 검증
-
-ZIP 무결성과 전 엔트리 `flag_bits & 0x800 == 0`, XML well-formed, `file=` 참조 ↔ 실제 `patNNNNN` 일치,
-이미지 무결성, 청구범위 내 `//` 잔존 0, 청구항 수와 도면 수, 대표도 `figref`, `he`/`wi` 한도.
-
-### `.HLT` 가 목적이라면
-
-`.HLT` 는 `HAN Lite` 독자 바이너리라 외부 생성이 불가능하다. 경로는 하나뿐이다.
-
-```
-docx ──[docx-to-hlz]──▶ .hlz ──[NKEditor로 열기 → 다른 이름으로 저장]──▶ .HLT
-```
-
-신형 "지식재산처 전자문서 작성 S/W"에서 저장하면 네이티브 형식이 `.hwpx` 가 된다. `.HLT` 가
-필요하면 구형 통합명세서작성기로 열어 저장한다.
-
-### 알려진 제약
-
-- **표(table) 미지원.** 현재 변환기는 문단과 이미지만 다룬다. 표가 있는 명세서는 확장이 필요하다.
-- 입력 워드가 KIPO 별지 서식 【식별항목】 태그로 구분돼 있어야 한다. 탐색창용 비표준 소제목
-  (예 【1. 용어의 정의】)은 본문 문단으로 흡수된다.
-
-## 🤝 기여 방법
-
-이 프로젝트는 한국 변리사 커뮤니티의 집단 지성으로 성장한다.
-
-### 기여 가능한 영역
-
-- **새로운 학습 항목 제안** — 각 SKILL.md의 `누적 학습 항목` 섹션에 일반화된 룰 추가
-- **금지/권장 표현 카탈로그 확장** — `kr-patent-spec-drafting/references/ko-patent-style-rules.md`
-- **점검 항목 추가** — `kr-patent-consistency-check/SKILL.md`의 마스터 리스트
-- **docx 양식 개선** — 빌더 스크립트의 한국 특허청 양식 정확도 향상
-- **새 스킬 추가** — 의견서/거절이유 대응, 영문 번역, 우선권 출원 등
-
-### PR 가이드라인
-
-1. 학습 항목은 **특정 사건이 아닌 일반 규칙**으로 작성
-2. 변경 사유를 PR 설명에 명시 (어떤 실무 경험에서 도출됐는지)
-3. 개인정보·사건번호·기술 영업비밀은 절대 포함하지 말 것
-4. 변경 후 기존 워크플로우가 깨지지 않는지 확인
-
-자세한 내용은 [CONTRIBUTING.md](./CONTRIBUTING.md) 참조.
-
-## ⚖️ 라이선스
-
-[MIT License](./LICENSE)
-
-본 스킬들은 "있는 그대로" 제공되며, 한국 특허청의 공식 양식이나 변리사 윤리 규정에 100% 부합한다는 보장은 하지 않는다. 실제 출원 전 자격을 갖춘 변리사의 검토가 필요하다.
-
-## 📚 참고 자료
-
-- [한국 특허법 시행규칙 별지 양식](https://www.law.go.kr/) — 공식 명세서 양식
-- [Anthropic Claude Skills 문서](https://docs.claude.com)
-- 본 패키지의 영감: "스킬 = 절차적 지식 + 도구 + 컴파운딩" 설계 철학
-
-## 🙏 만든 사람
-
-한국 변리사 실무 경험을 기반으로 Claude와 함께 설계.
-
-기여자: [Contributors](https://github.com/lsj4232/KR_PATENT_SKILL/graphs/contributors)
-
----
-
-## 🌐 English Summary
-
-Korean patent specification writing skill
-
-Claude skill KIPRIS 특허로
-
-GitHub KIPO Korean patent skill SKILL.md claude
-
-GitHub patent specification drafting LLM open source
-
-**KR_PATENT_SKILL** is a suite of **24 composable Claude Skills** for Korean patent attorneys (변리사), covering the entire pre-filing drafting workflow — from inventor interviews through claim drafting, reference-numeral design, specification writing, scope reinforcement, consistency checking, automated refinement, and KIPO-format `.docx` output — plus prior-art search, drawing numeral tagging, block-diagram drafting, and a meta-skill that compounds lessons learned back into the skills. A companion Electron desktop app (**Patent Block Diagram editor**, `patent-block-diagram-app/`) ships in this repo; the `patent-block-diagram` skill drives it over CDP to produce filing-ready drawings without mouse work.
-
-| Phase | Skill | Role |
-|---|---|---|
-| Intake / triage | `kr-patent-inventor-meeting` | Inventor-interview questions (7 perspectives) |
-| Intake / triage | `kr-patent-stage-recommender` | Diagnose material → recommend which Stage to start from |
-| Claims / numerals | `kr-patent-claim1-drafting` | Draft independent claim 1 (A–L formal algorithm) |
-| Claims / numerals | `kr-patent-symbol-design` | Hierarchical reference-numeral scheme |
-| Claims / numerals | `kr-patent-drawing-mapping` | OCR drawings → per-box 1:1 numeral mapping |
-| Claims / numerals | `kr-patent-dependent-claim-drafting` | Dependent / system / program / extra independent claims (2–N) |
-| Claims / numerals | `kr-patent-drawing-tagging` | Burn reference numerals into drawing PNGs (cv2 detection) |
-| Drafting | `kr-patent-spec-drafting` | Specification body per KIPO S1–S14 templates |
-| Drafting | `kr-patent-implementation-elaboration` | Elaborate abstract components (criterion → application → effect) |
-| Scope reinforcement | `kr-patent-definition-insertion` | Inline lexicographer definitions (4 principles) |
-| Scope reinforcement | `kr-patent-embodiment-addition` | 16-category variant embodiments |
-| Review / QA | `kr-patent-consistency-check` | Spec ↔ drawings ↔ claims check (Priority A/B/C, tracked changes) |
-| Review / QA | `kr-patent-detail-description-review` | S13 embodiment-body (ITER 10) format review |
-| Review / QA | `kr-patent-ralph-loop` | Auto-loop check↔fix until zero defects |
-| docx infra | `kr-patent-docx-builder` | Build KIPO-format `.docx` (Node.js ≥ 18, `docx`) |
-| docx infra | `kr-patent-format-unify` | Sync formatting of inserted paragraphs (python-docx) |
-| docx infra | `kr-patent-navigation-pane` | Add Word outline levels for the Navigation Pane (python-docx) |
-| Prior art | `kr-patent-search-query` | Standardized prior-art search queries per subcategory |
-| Prior art | `kr-patent-prior-art-report` | Accelerated-examination prior-art package (comparison table + hwpx) |
-| Drawings | `patent-block-diagram` | Natural language → `.pbd` → rendered filing-ready PNG |
-| Drawings | `patent-block-diagram-refine` | Revise an existing `.pbd` drawing set, keep numerals consistent |
-| Orchestration | `kr-patent-full-workflow` | `/full` end-to-end orchestrator (11 stages) |
-| Meta | `kr-patent-skill-updater` | Retrospective → auto-update skills (compounding loop) |
-| Output option | `docx-to-hlz` | *(optional)* Convert the finished `.docx` into `.hlz` for the KIPO e-filing editor |
-
-**Key ideas.** The skills encode Korean patent drafting rules — avoiding prior-art-admitting wording ("종래"), avoiding scope-narrowing wording ("구성되는"), the 3-step causal structure for effects (structure → mechanism → benefit), and keeping claim-limiting numerals out of the background/drawings — and enforce experiment-converged formal templates. A **compounding loop** (`kr-patent-skill-updater`) appends lessons to each skill's `누적 학습 항목` section, so the package gets smarter with use.
-
-**Quick start.** `git clone`, then either upload each skill folder to Claude.ai Skills, point Claude Code/API at the skill path, or paste a `SKILL.md` into the chat. Type `/full` (or "처음부터 끝까지") to run the full 11-stage pipeline; the attorney signs off only at the key decision checkpoints. The primary deliverable is a KIPO-format Word file; `docx-to-hlz` is an **optional** last step that repackages it as `.hlz` (a ZIP of KIPO `application-body` XML + drawings) for the e-filing editor. Provided as-is; have a qualified Korean patent attorney review before filing. Licensed under [MIT](./LICENSE).
+MIT License — see [LICENSE](LICENSE).
