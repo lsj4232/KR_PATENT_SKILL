@@ -1,6 +1,6 @@
 ---
 name: kr-patent-navigation-pane
-description: 한국 특허 명세서 .docx의 Word 탐색창(Navigation Pane)에 섹션 헤더가 보이도록 outline level을 자동 부여하는 인프라성 스킬. 【발명의 명칭】, 【청구항 N】, 【도면 N】 등 한국 특허청 별지 양식의 섹션 제목 paragraph에 <w:outlineLvl>만 직접 삽입하여 외형(글자색·크기·폰트)은 그대로 두고 Word 탐색창에서 빠르게 점프 가능하도록 만든다. 부가로, 평탄하게 이어지는 【발명을 실시하기 위한 구체적인 내용】(S13 실시예 본문)을 도면 전환 경계마다 【N. …】 하위 챕터로 분할 삽입하여 탐색창에 트리로 보이게 하는 챕터 분할 기능도 포함한다. "탐색창", "navigation pane", "탐색창 손봐줘", "탐색창 안 나옴", "탐색창 비어 있음", "outline 안 나옴", "목차 사이드바", "섹션 점프", "outline level", "outlineLvl", "실시예 본문 챕터 나눠줘", "발명을 실시하기 위한 구체적인 내용 챕터 분할", "탐색창에 챕터 보이게", "상세 설명 단락을 챕터로"가 언급되거나 외부에서 받은 명세서·다른 변리사 작성 docx·kr-patent-docx-builder 외 경로로 만든 docx의 탐색창이 비어 있다는 맥락이면 사용. kr-patent-full-workflow의 docx 출력 직후 또는 최종 검토 직전 단계에서도 호출 가능.
+description: 한국 특허 DOCX에 Word 탐색창용 제목 계층을 부여한다. 표제·청구항·본문 소제목의 outline level을 조정하는 요청에 사용한다.
 ---
 
 # kr-patent-navigation-pane — 한국 특허 명세서 탐색창 복구

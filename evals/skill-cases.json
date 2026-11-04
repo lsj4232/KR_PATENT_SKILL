@@ -1,0 +1,66 @@
+{
+  "purpose": "Manual or harness-driven behavioral evaluation; not executed by structural CI.",
+  "protocol": "Use only synthetic inputs, local temporary outputs, and installed skills. Capture selected skills, reference reads, questions, edits, artifacts and unresolved facts. Compare baseline and candidate under the same model/settings; score each expected observation separately. Do not send, file or publish patent materials.",
+  "cases": [
+    {
+      "id": "narrow-claim-batch",
+      "prompt": "센서값을 읽고 기준값을 넘으면 밸브를 닫는 제어기에 관한 발명자료다. 독립항과 종속항 2개를 한 번에 초안으로 써줘. 자료에 있는 변형은 기준값을 메모리에 저장하는 형태와 사용자가 기준값을 입력하는 형태다. 추가 단계나 실험 결과는 없다.",
+      "skills": ["kr-patent-claim1-drafting", "kr-patent-dependent-claim-drafting"],
+      "expected": ["일괄 초안을 작성하고 매 항 승인을 요구하지 않는다", "자료에 없는 모델·통신·성능을 추가하지 않는다", "부모항 한정과 종속항의 추가 한정이 양립한다", "명세서 전체 워크플로우를 실행하지 않는다"]
+    },
+    {
+      "id": "hardware-method-request",
+      "prompt": "금속판의 레이저 용접 공정 방법항을 청구항 1로 작성해줘. 금속판 두 장을 중첩한 후 지그로 가압한 상태에서 접합선을 따라 레이저를 조사한다. 장치항은 요청하지 않는다.",
+      "skills": ["kr-patent-claim1-drafting"],
+      "expected": ["H 분야라는 이유로 물건항 전환을 강제하지 않는다", "주어진 공정 순서와 관계를 보존한다", "근거 없는 온도·출력·효과 수치를 만들지 않는다"]
+    },
+    {
+      "id": "review-only",
+      "prompt": "수정하지 말고 검토만 해줘. 청구항: 센서(110)의 값을 저장하는 저장부(120)를 포함하는 장치. 본문: 센서(110)는 값을 측정하고 제어기(120)가 값을 저장한다. 도면은 제공하지 않았다.",
+      "skills": ["kr-patent-consistency-check"],
+      "expected": ["저장부/제어기 명칭 차이를 위치와 함께 검토 대상으로 보고한다", "도면은 미검증으로 구분한다", "원문 수정이나 무결함·출원 가능 선언을 하지 않는다"]
+    },
+    {
+      "id": "definition-already-clear",
+      "prompt": "어디부터 해야 할까? 본문 초안과 청구항이 있다. 본문에는 ‘대상 식별자는 각 센서를 구분하는 고유 문자열이다’라고 설명했고 모든 청구항 용어의 설명 위치표도 있다. ‘라 함은’이나 ‘한정되지 않는다’ 문구는 없다. 아직 검토는 안 했다.",
+      "skills": ["kr-patent-stage-recommender"],
+      "expected": ["정의 문구의 빈도만으로 Stage 6 재작업을 추천하지 않는다", "근거 확인을 위한 검토를 다음 작업으로 추천한다", "진단 요청만으로 본문을 수정하지 않는다"]
+    },
+    {
+      "id": "partial-workflow",
+      "prompt": "아래 센서 제어 발명의 자료로 청구항과 짧은 명세서 초안을 끝까지 작성해줘. 도면은 아직 없다. 센서값을 기준값과 비교해 초과하면 밸브를 닫는다. 기준값은 메모리에 저장한다. 실험 성능은 측정하지 않았다. DOCX는 필요 없다.",
+      "skills": ["kr-patent-full-workflow"],
+      "expected": ["청구항 제공을 기다리지 않고 작성 스킬로 연결한다", "없는 도면을 확정 인용하지 않는다", "실시예 분량 하한을 채우지 않는다", "DOCX·회고를 자동 실행하지 않는다"]
+    },
+    {
+      "id": "postfiling-addition",
+      "prompt": "이미 출원한 명세서다. 최초 자료에는 센서값을 기준값과 비교하는 제어기만 있다. 청구항은 그대로 두고, 새로 생각한 강화학습 제어 실시예를 본문에 추가해줘.",
+      "skills": ["kr-patent-embodiment-addition"],
+      "expected": ["청구항 불변을 신규사항 없음의 근거로 삼지 않는다", "최초 자료에 근거 없는 강화학습 내용을 확정 원고에 삽입하지 않는다", "미확인 후보 또는 별도 검토 사항으로 구분한다"]
+    },
+    {
+      "id": "bounded-loop",
+      "prompt": "이 초안을 기본 랄프 루프로 점검·수정해줘. 청구항: 센서(110)와 저장부(120)를 포함하는 장치. 본문: 센서(110)의 측정값은 저장부(110)에 저장된다. 도면은 없다. 청구항은 바꾸지 말아줘.",
+      "skills": ["kr-patent-ralph-loop"],
+      "expected": ["명확한 부호 오류를 고치고 청구항을 보존한다", "미제공 도면을 미검증으로 남긴다", "목표 도달 후 strict를 자동 실행하지 않는다", "결함 ID·수정 결과·종료 이유를 기록한다"]
+    },
+    {
+      "id": "docx-contract",
+      "prompt": "센서 제어 장치라는 제목과 ‘센서와 제어기를 포함하는 장치.’라는 청구항 1만 DOCX로 만들어줘. 도면은 없다. 새 출력 경로를 사용해줘.",
+      "skills": ["kr-patent-docx-builder"],
+      "expected": ["명시적 출력 경로를 사용한다", "청구항 헤더가 중복되지 않는다", "실제 DOCX의 내용과 XML을 확인한다", "미수행 시각 검증을 수행했다고 보고하지 않는다"]
+    },
+    {
+      "id": "no-retrospective-mutation",
+      "prompt": "이번 작업은 끝났어. 여기서 마무리해줘.",
+      "skills": [],
+      "expected": ["skill-updater를 자동 호출하거나 SKILL.md를 변경하지 않는다"]
+    },
+    {
+      "id": "unrelated-word-task",
+      "prompt": "특허와 관계없는 사내 휴가 신청서의 문장만 다듬어줘: 본인은 다음주에 휴가를 쓰고싶습니다.",
+      "skills": [],
+      "expected": ["한국 특허 스킬을 불필요하게 로드하지 않는다"]
+    }
+  ]
+}

@@ -46,10 +46,28 @@ for _stream_name in ("stdout", "stderr"):
 # 누적 학습 항목 섹션의 헤더 패턴
 # (좌측 정렬된 "### 누적 학습 항목" 또는 그 변형들 매칭)
 SECTION_HEADER_PATTERNS = [
-    r"^###\s*누적\s*학습\s*항목",
-    r"^###\s*회고\s*노하우\s*누적",  # skill-updater 자기 자신용
-    r"^###\s*누적\s*양식\s*개선",     # docx-builder용
+    r"^#{1,6}\s+누적\s*학습\s*항목(?:\s|$)",
+    r"^#{1,6}\s+회고\s*노하우\s*누적(?:\s|$)",
+    r"^#{1,6}\s+누적\s*양식\s*개선(?:\s|$)",
 ]
+
+
+def markdown_headings(lines):
+    """Yield real ATX headings, ignoring fenced code examples."""
+    fence = None
+    for index, line in enumerate(lines):
+        marker = re.match(r"^ {0,3}(`{3,}|~{3,})(.*)$", line)
+        if marker:
+            run, tail = marker.groups()
+            if fence is None:
+                fence = (run[0], len(run))
+            elif run[0] == fence[0] and len(run) >= fence[1] and not tail.strip():
+                fence = None
+            continue
+        if fence is None:
+            heading = re.match(r"^ {0,3}(#{1,6})\s+", line)
+            if heading:
+                yield index, len(heading[1])
 
 
 def find_section_range(lines, header_patterns=None):
@@ -60,34 +78,18 @@ def find_section_range(lines, header_patterns=None):
         (header_idx, content_start_idx, content_end_idx)
         - header_idx: "### 누적 학습 항목" 줄 인덱스
         - content_start_idx: 그 다음 줄
-        - content_end_idx: 다음 ## 헤더 직전, 또는 파일 끝
+        - content_end_idx: 다음 동급 또는 상위 헤더 직전, 또는 파일 끝
         없으면 (None, None, None) 반환
     """
     patterns = header_patterns or SECTION_HEADER_PATTERNS
     compiled = [re.compile(p) for p in patterns]
 
-    header_idx = None
-    for i, line in enumerate(lines):
-        for p in compiled:
-            if p.match(line):
-                header_idx = i
-                break
-        if header_idx is not None:
-            break
-
-    if header_idx is None:
-        return None, None, None
-
-    # 섹션 끝 찾기 (다음 ## 또는 # 헤더 직전, 또는 파일 끝)
-    content_start = header_idx + 1
-    content_end = len(lines)
-    for j in range(content_start, len(lines)):
-        # 새 섹션 헤더 (단, ### 으로 시작하는 동일 레벨은 OK)
-        if re.match(r"^##\s", lines[j]) or re.match(r"^#\s", lines[j]):
-            content_end = j
-            break
-
-    return header_idx, content_start, content_end
+    headings = list(markdown_headings(lines))
+    for offset, (index, level) in enumerate(headings):
+        if any(pattern.match(lines[index].lstrip()) for pattern in compiled):
+            end = next((i for i, depth in headings[offset + 1:] if depth <= level), len(lines))
+            return index, index + 1, end
+    return None, None, None
 
 
 def list_items(skill_path):
@@ -130,21 +132,32 @@ def append_items(skill_path, items, dry_run=False, no_backup=False):
         print(f"   SKILL.md에 '### 누적 학습 항목' 섹션이 있는지 확인하세요.", file=sys.stderr)
         return 2
 
-    # 섹션의 마지막 비어있지 않은 줄 찾기 (그 뒤에 새 항목 추가)
-    insert_at = end  # 기본: 섹션 끝 (다음 헤더 직전)
+    # Add at the section's top level, before any child heading.
+    insert_end = next((i for i, _ in markdown_headings(lines) if start <= i < end), end)
+    insert_at = start
     # 끝에서부터 거꾸로 비어있는 줄 skip
-    for k in range(end - 1, start - 1, -1):
+    for k in range(insert_end - 1, start - 1, -1):
         if lines[k].strip():
             insert_at = k + 1
             break
 
     # 새 항목들 (기존 줄 양식과 맞추기: "- " 접두사)
     new_lines = []
+    seen = {line.strip() for line in lines[start:end] if line.strip().startswith("- ")}
     for item in items:
         item = item.strip()
-        if not item.startswith("-"):
+        if not item or "\n" in item or "\r" in item or item == "-":
+            print("Error: --item must be a non-empty single line", file=sys.stderr)
+            return 1
+        if not item.startswith("- "):
             item = f"- {item}"
-        new_lines.append(item)
+        if item not in seen:
+            seen.add(item)
+            new_lines.append(item)
+
+    if not new_lines:
+        print("No changes: all items already exist.")
+        return 0
 
     # dry run
     if dry_run:
@@ -159,7 +172,7 @@ def append_items(skill_path, items, dry_run=False, no_backup=False):
 
     # 백업
     if not no_backup:
-        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         backup_path = p.with_suffix(p.suffix + f".bak.{ts}")
         shutil.copy2(p, backup_path)
         print(f"  백업: {backup_path}")

@@ -1,6 +1,6 @@
 ---
 name: kr-patent-format-unify
-description: 한국 특허 명세서 .docx 안에서 후속 작업으로 신설된 단락(insert_paragraph_before·정합성 수정·청구항 본문 매핑·도면 도입 문장 신설·S14 1파트 신설 등으로 추가된 단락)이 인접 본문 단락과 서식(글꼴·글자 크기·색상·줄간격·들여쓰기·첫 줄 들여쓰기·정렬 등)이 달라 시각적으로 튀는 문제를 자동 검출하여 인접 본문 단락의 pPr(paragraph properties) 및 첫 run의 rPr(character properties)를 deepcopy로 복사해 일괄 동기화. python-docx의 `insert_paragraph_before(text, style=...)`는 paragraph style 객체만 승계하고 character formatting(font·size·color·outlineLvl 제외) + paragraph format(들여쓰기·줄간격)을 default로 두기 때문에, 신설 단락이 본문 다른 단락과 서식 어긋남이 자주 발생. 본 스킬은 (1) 명세서 안 신설 추정 단락 자동 검출 — 한국 특허 흔한 신설 도입어 패턴(청구항 정형 "본 발명의 일 실시예에 있어서,", "본 발명에 따른 [발명의 명칭]은,", 도면 도입 "도 N은 ~ 이다.", S14 1파트 "이상에서 살펴본 바와 같이, 본 발명에 따르면,") + 사용자 지정 패턴 + 자동 폰트 불일치 감지 — 와 (2) 인접 본문 단락(직전 우선, 없으면 직후)의 pPr·rPr deepcopy 복사를 수행. outline level은 헤더가 아닌 본문 단락에는 부여하지 않음(자동 제거). 청구범위·요약서 섹션은 처리 대상에서 제외(불변). "서식 통일", "서식 동기화", "format unify", "서식이 다르다", "단락 서식 안 맞아", "쌩뚱맞은 서식", "폰트가 달라", "신설 단락 서식", "insert_paragraph_before 서식"이 언급되거나, 청구항 본문 매핑·도면 도입 문장 신설·정합성 수정 직후 명세서가 서식 어긋남으로 보이는 맥락이면 사용. kr-patent-navigation-pane(outline 부여)과 짝을 이루는 docx 후처리 인프라.
+description: 한국 특허 DOCX의 새 단락이나 불일치 단락에 기준 문서의 서식을 적용한다. 텍스트 작성·권리범위 변경은 다루지 않는다.
 ---
 
 # kr-patent-format-unify — 한국 특허 명세서 신설 단락 서식 동기화

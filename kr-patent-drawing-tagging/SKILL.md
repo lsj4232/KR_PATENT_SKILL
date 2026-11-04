@@ -1,14 +1,6 @@
 ---
 name: kr-patent-drawing-tagging
-description: >
-  한국 특허 도면 PNG에 도면부호를 직접 그려 넣는(태깅하는) 스킬. 확정된 부호 체계
-  (kr-patent-symbol-design)와 박스별 매핑(kr-patent-drawing-mapping의 지시서)을 입력받아,
-  cv2 박스 자동검출 + 어두운 픽셀 충돌감지 폴백 배치로 부호 텍스트를 도면 이미지 위에
-  삽입하여 태깅본 PNG를 생성한다. 매핑표(md+xlsx)까지 함께 산출. "도면에 부호 넣어줘",
-  "도면부호 태깅", "PNG에 부호 삽입", "태깅본 만들어", "부호 그려 넣어", "도면에 번호 박아줘",
-  "reference numeral overlay" 같은 표현이 보이거나, 무부호 블록도/흐름도 도면에 부호를
-  입혀 출원용 도면을 만들려는 맥락에서 사용. (부호 체계 설계=symbol-design,
-  박스↔부호 매핑표만=drawing-mapping, 본 스킬=이미지에 실제 삽입.)
+description: 확정된 도면부호와 객체 매핑을 이용해 PNG 도면에 부호를 실제로 삽입한다. 번호 설계나 매핑표만 만드는 요청에는 사용하지 않는다.
 ---
 
 # 한국 특허 도면부호 태깅 (PNG 직접 삽입)
