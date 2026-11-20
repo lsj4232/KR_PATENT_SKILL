@@ -4,7 +4,7 @@ const svg = document.getElementById('canvas')
 const wrap = document.getElementById('wrap')
 
 const FONT = "'Apple SD Gothic Neo','Malgun Gothic','맑은 고딕','Noto Sans KR',sans-serif"
-const SHADOW = 5   // 오프셋 음영 두께(px)
+const SHADOW = 5   // 오프셋 음영 최소 두께(px)
 const FS = 15      // 폰트 크기
 const LH = 20      // 줄 간격
 const GRID = 5     // 스냅 격자
@@ -406,6 +406,8 @@ function renderBox(b) {
   const texts = lines.map((ln, i) =>
     `<text x="${b.x + b.w / 2}" y="${y0 + i * lh}" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="bold">${esc(ln)}</text>`
   ).join('')
+  // 큰 도면을 Word에 축소 배치해도 그림자가 보이도록 글자 크기에 맞춰 오프셋을 키운다.
+  const shadowOffset = Math.max(SHADOW, Math.round(fs / 6))
   // noFrame: 테두리·음영·채움 없는 순수 글자 상자 (도면 주석·라벨용).
   // 그려지는 게 글자뿐이라 잡을 곳이 없으므로 투명 사각형을 깔아 클릭 영역을 만든다.
   // 선택 중일 때만 파선 안내틀을 덧그린다 — 내보내기 직전에 선택이 해제되므로 PNG에는 안 나온다.
@@ -413,7 +415,7 @@ function renderBox(b) {
     ? `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="transparent"/>` +
       (sel || src ? `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-dasharray="4 4"/>` : '')
     // 구름은 특허 도면 관례대로 음영 없이 선만 그린다 (noShadow 로 다른 도형도 끌 수 있다)
-    : (b.dash || b.noShadow || b.shape === 'cloud' ? '' : shapeSVG(b, SHADOW, SHADOW, 'black', null)) +
+    : (b.dash || b.noShadow || b.shape === 'cloud' ? '' : shapeSVG(b, shadowOffset, shadowOffset, 'black', null)) +
       shapeSVG(b, 0, 0, b.dash ? 'none' : (b.hatch ? (b.hatch === 'dot' ? 'url(#dots)' : 'url(#hatch)') : 'white'), stroke)
   return `<g data-type="box" data-id="${b.id}" class="el">
     ${body}
