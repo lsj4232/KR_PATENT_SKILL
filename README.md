@@ -77,6 +77,18 @@ node scripts/build_kr_patent.js --content /path/to/content.json --output /path/t
 
 [입력 스키마](kr-patent-docx-builder/references/content-schema.md)를 사용합니다. `figures`에 도면 이미지의 `path`를 지정하면 Word 생성 시 PNG/JPEG를 도면 페이지에 자동 삽입합니다. 이미지 비율을 유지해 페이지 안에 맞추며, 상대 경로는 입력 콘텐츠 파일의 폴더를 기준으로 읽습니다. 기존 Word 편집을 보존해야 하는 경우 재빌드하지 말고 해당 문서를 편집합니다.
 
+## 한국 특허 명세서 양식에 맞춘 Word 탐색창
+
+Word 명세서를 만들 때 각 제목의 개요 수준을 한국 특허 명세서 양식의 항목에 맞춰 자동으로 설정합니다. Word의 **보기 → 탐색 창**에서 `【발명의 설명】`, `【청구범위】`, `【요약서】`, `【도면】`을 펼치고, 하위 항목이나 개별 청구항·도면으로 바로 이동할 수 있습니다. 기존 DOCX에도 같은 제목 계층을 적용할 수 있습니다. [Word 탐색창 스킬](kr-patent-navigation-pane/SKILL.md)
+
+![한국 특허 명세서의 상위 항목과 하위 제목이 계층으로 표시된 Word 탐색창](docs/examples/word-navigation-pane.png)
+
+## Word 명세서를 HLZ로 변환
+
+**HLZ(`.hlz`)는 한국 특허 전자출원에서 출원서에 첨부하는 명세서 등 제출파일 형식**입니다. 명세서 XML과 도면 이미지 등을 하나의 압축 파일로 묶습니다. [특허로 명세서작성기 사용자 설명서, 4.10.1절](https://www.patent.go.kr/smart/docs/download/MOIPEditorManual.pdf)
+
+한국 특허 명세서의 식별항목(`【발명의 명칭】`, `【청구항 1】` 등)이 있는 Word 파일을 주고 **“이 DOCX를 HLZ로 변환해줘”**라고 요청하면 `.hlz` 파일로 변환합니다. 현재 변환기는 Word 표를 지원하지 않습니다. [DOCX → HLZ 변환 스킬](docx-to-hlz/SKILL.md)
+
 ## 특허 블록도 에디터
 
 [patent-block-diagram-app](patent-block-diagram-app/README.md)은 PBD 원본을 편집하고 PNG로 내보내는 Electron 앱입니다. 실행·렌더링 상세는 앱과 도면 스킬 안내를 따릅니다.
