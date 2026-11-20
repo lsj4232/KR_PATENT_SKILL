@@ -30,13 +30,13 @@ description: 청구항과 발명자료를 근거로 한국 특허 명세서 본�
 | S14 마무리 | 필요한 구현·변형 설명만 남긴다. 효과나 매체 일반론을 의무적으로 반복하지 않는다. |
 | S7 검토 | 청구항 근거, 용어·부호·도면, 인과관계, 미확인 사실, 내부 작성 메모의 잔존 여부를 점검한다. |
 
-요약서·대표도 등은 요청한 산출물 범위에 포함될 때 작성한다. 분량·문단 수·접속어 빈도는 기술적 충실도의 대용 지표가 아니다. 기존의 600문장·25,000자·30페이지·보완 15~25문장 하한은 적용하지 않는다.
+요약서·대표도 등은 요청한 산출물 범위에 포함될 때 작성한다. AI·소프트웨어·제어·시스템 풀명세서에는 [SW/AI 보충의 풀명세서 작성 기준](references/sw-ai-spec-supplement.md#풀명세서-작성-기준)을 기본 적용한다. 본문 설계, 작성, 검토에서 실시예 분량, 실시예 4계층, 구성요소별 3단 서술, 보완 문단 분량을 확인한다.
 
 ## 필요한 참고자료만 읽기
 
 | 상황 | 참고자료 |
 |---|---|
-| AI·소프트웨어·제어의 구현 설명 | [SW/AI 보충](references/sw-ai-spec-supplement.md) |
+| AI·소프트웨어·제어·시스템의 본문 작성과 보완 | [SW/AI 보충](references/sw-ai-spec-supplement.md) |
 | 기계·전기전자·화학의 구조·실시형태 설명 | [HW 보충](references/hw-mechanical-spec-rules.md) |
 | 문체·표현 정리 또는 사무소 양식 적용 | [스타일 가이드](references/ko-patent-style-rules.md) |
 | 도면이 없거나 도면 세트를 재설계 | [도면 세트 설계](references/drawing-set-design.md) |
@@ -44,6 +44,6 @@ description: 청구항과 발명자료를 근거로 한국 특허 명세서 본�
 
 ## 보완과 결과
 
-모호한 정의, 설명되지 않은 처리, 근거 있는 변형이 실제로 필요할 때만 각각 `kr-patent-definition-insertion`, `kr-patent-implementation-elaboration`, `kr-patent-embodiment-addition`을 사용한다. 세 스킬을 자동으로 연속 실행하지 않는다.
+본문에서 보완이 필요한 정의·구현·실시예를 확인하고, 각각 `kr-patent-definition-insertion`, `kr-patent-implementation-elaboration`, `kr-patent-embodiment-addition`을 사용한다. AI·소프트웨어·제어·시스템 분야의 보완 문단에는 SW/AI 보충의 분량 기준을 적용한다.
 
 완성 초안과 구성별 근거표, 미확인 사항을 제공한다. 출원 후 수정은 최초 명세서·도면에서 근거를 확인하고 없으면 삽입하지 않는다. 전체 검토는 `kr-patent-consistency-check`, 요청된 DOCX 생성은 `kr-patent-docx-builder`로 이어간다. 필요한 법령·심사기준은 적용 시점의 공식 자료를 확인하며 작성 선호를 법적 요건으로 표현하지 않는다.
