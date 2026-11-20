@@ -5,10 +5,12 @@
   "private": true,
   "main": "scripts/build_kr_patent.js",
   "scripts": {
-    "build": "node scripts/build_kr_patent.js"
+    "build": "node scripts/build_kr_patent.js",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
-    "docx": "^8.5.0"
+    "docx": "^8.5.0",
+    "image-size": "^2.1.0"
   },
   "license": "MIT"
 }

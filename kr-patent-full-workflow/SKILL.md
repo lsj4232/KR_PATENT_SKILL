@@ -29,7 +29,7 @@ description: 발명자료에서 청구항·명세서·최종 DOCX까지 한국 �
 | 7 | 변형 실시예 보완 | 필요할 때 `kr-patent-embodiment-addition` | 근거 있는 변형과 미확인 후보 구분 |
 | 8 | 전체 정합성 검토 | `kr-patent-consistency-check`; 반복 수정 요청 시 `kr-patent-ralph-loop` | 근거가 있는 결함·미검증 범위 정리 |
 | 9 | 수정·재검증 | 결함에 해당하는 스킬 또는 직접 수정 | 허용된 수정 반영, 영향 구간 재검증 |
-| 10 | 파일 출력 | `kr-patent-docx-builder` | 파일 생성, 내용·구조 검증 |
+| 10 | 파일 출력 | `kr-patent-docx-builder` | 생성·확정한 도면의 PNG/JPEG 경로를 `figures[].path`로 전달해 Word에 삽입, 내용·구조·도면 포함 검증 |
 | 11 | 스킬 개선 | 요청된 경우에만 `kr-patent-skill-updater` | 근거 있는 지침 수정과 검증 |
 
 청구항이 없더라도 작성 요청과 기술 근거가 있으면 Stage 2에서 초안을 작성한다. 기존 청구항은 사용자가 허용한 범위에서만 수정한다. 도면이 없으면 도면 설계안과 확보된 내용의 초안을 진행하고, 존재하지 않는 도면을 본문에서 확정 인용하지 않는다.

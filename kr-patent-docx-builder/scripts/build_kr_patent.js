@@ -15,6 +15,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { imageSize } = require("image-size");
 
 let docxLib;
 try {
@@ -31,7 +32,7 @@ try {
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, LevelFormat, HeadingLevel, BorderStyle, WidthType,
-  ShadingType, PageBreak, PageNumber, Header, Footer, Tab, TabStopType
+  ShadingType, PageBreak, PageNumber, Header, Footer, Tab, TabStopType, ImageRun
 } = docxLib;
 
 // =============================================================================
@@ -111,6 +112,8 @@ function sectionTitle(text, opts = {}) {
   const level = typeof opts.level === "number" ? opts.level : 2;
   return new Paragraph({
     alignment: (LAYOUT.l1_center && level === 1) ? AlignmentType.CENTER : AlignmentType.LEFT,
+    pageBreakBefore: opts.pageBreakBefore,
+    keepNext: opts.keepNext,
     spacing: {
       before: SPACING.section_before,
       after: SPACING.section_after,
@@ -125,6 +128,7 @@ function sectionTitle(text, opts = {}) {
 function bodyPara(text, opts = {}) {
   return new Paragraph({
     alignment: AlignmentType[LAYOUT.body_align],
+    keepNext: opts.keepNext,
     spacing: {
       before: 0,
       after: opts.afterSpacing || SPACING.para_after,
@@ -282,13 +286,45 @@ function buildClaims(claims) {
 }
 
 // 도면 페이지 빌더 — 【도면】 컨테이너 (L1) + 【도면 N】 개별 페이지 (L2)
-function buildDrawingsSection(figures) {
-  const blocks = [sectionTitle("【도면】", { level: 1 })];
+function buildDrawingsSection(figures, imageBaseDir = process.cwd()) {
+  const blocks = [sectionTitle("【도면】", { level: 1, pageBreakBefore: true, keepNext: true })];
   figures.forEach((f, idx) => {
     const num = (f && f.num) || idx + 1;
-    blocks.push(sectionTitle(`【도면 ${num}】`, { level: 2 }));
+    blocks.push(sectionTitle(`【도면 ${num}】`, {
+      level: 2, pageBreakBefore: idx > 0, keepNext: Boolean(f && (f.caption || f.path))
+    }));
     if (f && f.caption) {
-      blocks.push(bodyPara(f.caption, { noIndent: true }));
+      blocks.push(bodyPara(f.caption, { noIndent: true, keepNext: Boolean(f.path) }));
+    }
+    if (f && f.path) {
+      const imagePath = path.resolve(imageBaseDir, f.path);
+      let data, dimensions;
+      try {
+        data = fs.readFileSync(imagePath);
+        dimensions = imageSize(data);
+        if (!["png", "jpg"].includes(dimensions.type)) {
+          throw new Error("PNG 또는 JPEG 도면을 사용하세요.");
+        }
+      } catch (err) {
+        throw new Error(`도면 ${num} 이미지 삽입 실패 (${imagePath}): ${err.message}`);
+      }
+      // DXA → CSS px (96 DPI). 도면 제목 2개·캡션·문단 여유를 제외하고 비율 유지.
+      const maxWidth = (11906 - LAYOUT.margin.left - LAYOUT.margin.right) / 15;
+      const titleSpace = 2 * (SPACING.section_before + SPACING.section_after + SPACING.line);
+      const captionSpace = f.caption ? SPACING.line + SPACING.para_after : 0;
+      const maxHeight = (16838 - LAYOUT.margin.top - LAYOUT.margin.bottom - titleSpace - captionSpace - 240) / 15;
+      if (maxWidth <= 0 || maxHeight <= 0) {
+        throw new Error(`도면 ${num}: 여백·간격 설정으로 이미지 공간이 없습니다.`);
+      }
+      const scale = Math.min(maxWidth / dimensions.width, maxHeight / dimensions.height);
+      blocks.push(new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { before: 0, after: 0, line: 240 },
+        children: [new ImageRun({
+          data, type: dimensions.type,
+          transformation: { width: dimensions.width * scale, height: dimensions.height * scale }
+        })]
+      }));
     }
   });
   return blocks;
@@ -320,7 +356,7 @@ function buildDetailedDescription(items) {
 // 메인 빌드
 // =============================================================================
 
-function buildDocument(content) {
+function buildDocument(content, imageBaseDir = process.cwd()) {
   const children = [];
 
   // 【발명의 설명】 — Level 1 컨테이너 (Word 탐색 창 최상위)
@@ -389,7 +425,7 @@ function buildDocument(content) {
 
   // 도면 페이지 (【도면】 컨테이너 + 【도면 N】) — Level 1 + Level 2
   if (content.figures && content.figures.length > 0) {
-    children.push(...buildDrawingsSection(content.figures));
+    children.push(...buildDrawingsSection(content.figures, imageBaseDir));
   }
 
   // Document 객체 생성
@@ -468,7 +504,7 @@ function main() {
   }
 
   // 빌드
-  const doc = buildDocument(content);
+  const doc = buildDocument(content, path.dirname(absContentPath));
 
   Packer.toBuffer(doc).then(buffer => {
     fs.mkdirSync(path.dirname(outputPath), { recursive: true });

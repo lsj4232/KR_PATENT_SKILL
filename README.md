@@ -2,7 +2,7 @@
 
 한국 특허 작성 실무를 돕는 24개 Agent Skills와 문서·도면 도구입니다. 발명자료 검토, 청구항·명세서 작성, 정합성 검토, DOCX 출력에 필요한 작업을 선택해 사용합니다.
 
-**자체 개발한 고유 도면 작도 프로그램인 [특허 블록도 에디터](patent-block-diagram-app/README.md)와 연동해, 자연어 설명이나 발명자료를 바탕으로 블록도·흐름도까지 직접 만들어 산출물에 포함합니다.** 도면부호가 표시된 PNG 이미지와 수정 가능한 PBD 원본을 함께 제공하며, 생성한 도면은 에디터에서 이어서 편집할 수 있습니다.
+**자체 개발한 고유 도면 작도 프로그램인 [특허 블록도 에디터](patent-block-diagram-app/README.md)와 연동해, 자연어 설명이나 발명자료를 바탕으로 블록도·흐름도까지 직접 만들고 Word 명세서 생성 시 도면 이미지도 자동 삽입합니다.** 도면부호가 표시된 PNG 이미지와 수정 가능한 PBD 원본을 함께 제공하며, 생성한 도면은 에디터에서 이어서 편집할 수 있습니다.
 
 ![특허 블록도 에디터 예시](docs/examples/example-agent-system.png)
 
@@ -75,7 +75,7 @@ npm ci
 node scripts/build_kr_patent.js --content /path/to/content.json --output /path/to/draft.docx
 ```
 
-[입력 스키마](kr-patent-docx-builder/references/content-schema.md)를 사용합니다. 현재 빌더의 `figures`는 도면 제목·캡션만 출력하며 이미지 파일을 삽입하지 않습니다. 기존 Word 편집을 보존해야 하는 경우 재빌드하지 말고 해당 문서를 편집합니다.
+[입력 스키마](kr-patent-docx-builder/references/content-schema.md)를 사용합니다. `figures`에 도면 이미지의 `path`를 지정하면 Word 생성 시 PNG/JPEG를 도면 페이지에 자동 삽입합니다. 이미지 비율을 유지해 페이지 안에 맞추며, 상대 경로는 입력 콘텐츠 파일의 폴더를 기준으로 읽습니다. 기존 Word 편집을 보존해야 하는 경우 재빌드하지 말고 해당 문서를 편집합니다.
 
 ## 특허 블록도 에디터
 
